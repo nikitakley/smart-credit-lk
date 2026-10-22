@@ -1,0 +1,15 @@
+# Хранить текстовые файлы с переводом строк LF (важно для Docker на Windows)
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Бинарные файлы — без преобразований
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary

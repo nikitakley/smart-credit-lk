@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Node / фронтенд
+node_modules/
+dist/
+*.log
+
+# Секреты и локальное окружение
+.env
+.env.*
+!.env.example
+
+# IDE и ОС
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Данные контейнеров
+pgdata/
