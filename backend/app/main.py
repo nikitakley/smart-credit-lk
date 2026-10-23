@@ -3,6 +3,7 @@
 from fastapi import FastAPI
 
 from app.config import get_settings
+from app.errors import register_error_handlers
 
 settings = get_settings()
 
@@ -12,6 +13,7 @@ app = FastAPI(
     docs_url="/api/docs",
     openapi_url="/api/openapi.json",
 )
+register_error_handlers(app)
 
 
 @app.get("/api/health")
