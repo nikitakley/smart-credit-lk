@@ -10,7 +10,7 @@ class Product(CamelModel):
     note: str = Field(examples=["Пополнение оборотных средств"])
     min_amount: int = Field(description="Минимальная сумма, ₽", examples=[300000])
     max_amount: int = Field(description="Максимальная сумма, ₽", examples=[10000000])
-    max_term_monts: int = Field(examples=[36])
+    max_term_months: int = Field(examples=[36])
     spread: float = Field(description="Спред продукта к ключевой ставке, п.п.", examples=[4.5])
     rate_from: float = Field(description="Ставка от, % годовых", examples=[18.5])
 
