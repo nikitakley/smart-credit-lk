@@ -73,7 +73,7 @@ def conflict(code: str, message: str) -> ApiError:
     return ApiError(409, code, message)
 
 
-def validation_error(fields: list[FieldError], message: str = "Проверьте введеные данные") -> ApiError:
+def validation_error(fields: list[FieldError], message: str = "Проверьте введенные данные") -> ApiError:
     return ApiError(422, "validation_error", message, fields)
 
 
@@ -92,19 +92,26 @@ def _field_path(loc: tuple) -> str:
 def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(ApiError)
     async def handle_api_error(_: Request, exc: ApiError) -> JSONResponse:
-        return _response(exc.status_code, ErrorBody(code=exc.code, message=exc.message, field=exc.fields))
+        return _response(exc.status_code, ErrorBody(code=exc.code, message=exc.message, fields=exc.fields))
 
     @app.exception_handler(RequestValidationError)
     async def handle_validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
         fields = [
-            FieldError(field=_field_path(tuple(err.get("loc", ()))), code=err.get("type", "invalid"), message=err.get("msg", ""))
+            FieldError(
+                field=_field_path(tuple(err.get("loc", ()))), 
+                code=err.get("type", "invalid"), 
+                message=err.get("msg", ""))
             for err in exc.errors()
         ]
         return _response(422, ErrorBody(code="validation_error", message="Проверьте введенные данные", fields=fields))
 
     @app.exception_handler(StarletteHTTPException)
     async def handle_http_error(_: Request, exc: StarletteHTTPException) -> JSONResponse:
-        codes = {404: "not_found", 405: "method_not_allowed", 401: "unauthorized", 403: "forbidden"}
+        codes = {
+            404: "not_found", 
+            405: "method_not_allowed", 
+            401: "unauthorized", 
+            403: "forbidden"}
         code = codes.get(exc.status_code, "http_error")
         return _response(exc.status_code, ErrorBody(code=code, message=str(exc.detail)))
 
