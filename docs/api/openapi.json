@@ -1,0 +1,4058 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Smart Credit LK API",
+    "description": "\nAPI цифрового кредитного конвейера для малого и микробизнеса.\n\n**Авторизация:**: `POST /api/auth/login` → кнопка [Authorize] → вставить `accessToken`.\n\n**Формат ошибок:** `{\"error\": {\"code\", \"message\", \"fields\": [{\"field\", \"code\", \"message\"}]}}`.\n\n**Статусы заявки:** `draft → submitted → validation → enrichment → scoring → [approved | counter_offer | manual_review | docs_requested | rejected] → signing → issued` (или `declined_by_client`).\n\n> *Этап 1:* ответы формируются заглушками в памяти, конвейер обработки не запущен.\n",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "tags": [
+          "Служебное"
+        ],
+        "summary": "Проверка работоспособности",
+        "operationId": "health_api_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/demo/reset": {
+      "post": {
+        "tags": [
+          "Служебное"
+        ],
+        "summary": "Сбросить демо-данные (только в демо-режиме)",
+        "operationId": "demo_reset_api_demo_reset_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Объект не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/test-accounts": {
+      "get": {
+        "tags": [
+          "Авторизация"
+        ],
+        "summary": "Тестовые учетные записи (только в демо-режиме)",
+        "operationId": "test_accounts_api_auth_test_accounts_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TestAccount"
+                  },
+                  "type": "array",
+                  "title": "Response Test Accounts Api Auth Test Accounts Get"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Объект не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "Авторизация"
+        ],
+        "summary": "Вход по тестовой учетной записи",
+        "description": "Клиент уже обслуживается в банке, поэтому регистрации нет. Токен передается в заголовке `Authorization: Bearer <token>`.",
+        "operationId": "login_api_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Объект не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Ошибка валидации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": [
+          "Авторизация"
+        ],
+        "summary": "Выход из тестовой учетной записи",
+        "description": "Токен без состояния: клиент удаляет его у себя.",
+        "operationId": "logout_api_auth_logout_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Нет или недействителен токен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/me": {
+      "get": {
+        "tags": [
+          "Авторизация"
+        ],
+        "summary": "Текущий пользователь и его компания",
+        "operationId": "me_api_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Нет или недействителен токен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/me/company": {
+      "get": {
+        "tags": [
+          "Компания, продукты, справочники"
+        ],
+        "summary": "Компания текущего клиента",
+        "description": "Реквизиты известны банку заранее - клиент их не вводит.",
+        "operationId": "my_company_api_me_company_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Company"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Нет или недействителен токен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Недостаточно прав",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Объект не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/products": {
+      "get": {
+        "tags": [
+          "Компания, продукты, справочники"
+        ],
+        "summary": "Каталог кредитных продуктов",
+        "operationId": "products_api_products_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Product"
+                  },
+                  "type": "array",
+                  "title": "Response Products Api Products Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/assistant/recommend": {
+      "post": {
+        "tags": [
+          "Компания, продукты, справочники"
+        ],
+        "summary": "Подбор продукта по цели, сумме и сроку",
+        "description": "Правила подбора без ИИ: порядок зависит от цели, продукты вне лимитов по сумме отсеиваются.",
+        "operationId": "assistant_recommend_api_assistant_recommend_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecommendRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Ошибка валидации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dictionaries": {
+      "get": {
+        "tags": [
+          "Компания, продукты, справочники"
+        ],
+        "summary": "Справочники",
+        "operationId": "dictionaries_api_dictionaries_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dictionaries"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/applications": {
+      "get": {
+        "tags": [
+          "Заявки клиента"
+        ],
+        "summary": "Мои заявки",
+        "operationId": "list_applications_api_applications_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ApplicationSummary"
+                  },
+                  "type": "array",
+                  "title": "Response List Applications Api Applications Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Нет или недействителен токен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Недостаточно прав",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Заявки клиента"
+        ],
+        "summary": "Создать черновик заявки",
+        "description": "Компания берётся из профиля клиента. Поля можно передать сразу или заполнять по шагам в PATCH.",
+        "operationId": "create_application_api_applications_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationClient"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Нет или недействителен токен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Недостаточно прав",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Ошибка валидации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/applications/{application_id}": {
+      "get": {
+        "tags": [
+          "Заявки клиента"
+        ],
+        "summary": "Заявка (для клиентской стороны)",
+        "description": "Для отслеживания статуса опрашивать раз в 2 секунды, пока статус в submitted / validation / enrichment / scoring.",
+        "operationId": "get_application_api_applications__application_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Application Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationClient"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Нет или недействителен токен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Недостаточно прав",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Объект не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Заявки клиента"
+        ],
+        "summary": "Сохранить изменения черновика",
+        "description": "Передаются только изменённые поля. Вызывать при переходе между шагами мастера.",
+        "operationId": "update_application_api_applications__application_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Application Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationClient"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Нет или недействителен токен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Недостаточно прав",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Объект не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Действие недопустимо в текущем статусе",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Ошибка валидации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/applications/{application_id}/submit": {
+      "post": {
+        "tags": [
+          "Заявки клиента"
+        ],
+        "summary": "Отправить заявку в банк",
+        "description": "Проверяет обязательные поля и согласия, переводит заявку в submitted. Дальше заявка обрабатывается асинхронно.",
+        "operationId": "submit_application_api_applications__application_id__submit_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Application Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Уникальный ключ запроса: повторная отправка не создаёт дубль",
+              "title": "Idempotency-Key"
+            },
+            "description": "Уникальный ключ запроса: повторная отправка не создаёт дубль"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationClient"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Нет или недействителен токен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Недостаточно прав",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Объект не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Действие недопустимо в текущем статусе",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Ошибка валидации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/applications/{application_id}/info": {
+      "post": {
+        "tags": [
+          "Заявки клиента"
+        ],
+        "summary": "Ответить на запрос дополнительной информации",
+        "description": "Доступно в статусе docs_requested. После ответа заявка снова проходит проверку.",
+        "operationId": "respond_info_api_applications__application_id__info_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Application Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InfoResponseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationClient"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Нет или недействителен токен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Недостаточно прав",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Объект не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Действие недопустимо в текущем статусе",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Ошибка валидации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/applications/{application_id}/offer/accept": {
+      "post": {
+        "tags": [
+          "Заявки клиента"
+        ],
+        "summary": "Принять предложение банка",
+        "description": "Ошибки: no_offer, offer_expired (409). Переводит заявку в signing.",
+        "operationId": "accept_offer_api_applications__application_id__offer_accept_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Application Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationClient"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Нет или недействителен токен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Недостаточно прав",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Объект не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Действие недопустимо в текущем статусе",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/applications/{application_id}/offer/decline": {
+      "post": {
+        "tags": [
+          "Заявки клиента"
+        ],
+        "summary": "Отказаться от предложения банка",
+        "operationId": "decline_offer_api_applications__application_id__offer_decline_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Application Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationClient"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Нет или недействителен токен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Недостаточно прав",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Объект не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Действие недопустимо в текущем статусе",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/applications/{application_id}/sign/code": {
+      "post": {
+        "tags": [
+          "Заявки клиента"
+        ],
+        "summary": "Получить код для подписания договора",
+        "description": "Код живёт 5 минут, даётся 3 попытки. В демо-режиме код возвращается в ответе.",
+        "operationId": "request_sign_code_api_applications__application_id__sign_code_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Application Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignCodeResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Нет или недействителен токен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Недостаточно прав",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Объект не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Действие недопустимо в текущем статусе",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/applications/{application_id}/sign": {
+      "post": {
+        "tags": [
+          "Заявки клиента"
+        ],
+        "summary": "Подписать договор кодом",
+        "description": "Ошибки: invalid_code (422), not_signing / code_expired / code_attempts_exceeded (409). После подписания средства зачисляются на счёт, статус issued.",
+        "operationId": "sign_contract_api_applications__application_id__sign_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Application Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationClient"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Нет или недействителен токен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Недостаточно прав",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Объект не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Действие недопустимо в текущем статусе",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Ошибка валидации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/analyst/applications": {
+      "get": {
+        "tags": [
+          "Сотрудник банка"
+        ],
+        "summary": "Очередь заявок",
+        "description": "Сортировка по дате создания, новые сверху. Черновики не показываются.",
+        "operationId": "queue_api_analyst_applications_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ApplicationStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Фильтр по статусу",
+              "title": "Status"
+            },
+            "description": "Фильтр по статусу"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AnalystQueueItem"
+                  },
+                  "title": "Response Queue Api Analyst Applications Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Нет или недействителен токен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Недостаточно прав",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/analyst/applications/{application_id}": {
+      "get": {
+        "tags": [
+          "Сотрудник банка"
+        ],
+        "summary": "Карточка заявки (для банковской стороны)",
+        "operationId": "card_api_analyst_applications__application_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Application Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationAnalyst"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Нет или недействителен токен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Недостаточно прав",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Объект не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/analyst/applications/{application_id}/decision": {
+      "post": {
+        "tags": [
+          "Сотрудник банка"
+        ],
+        "summary": "Решение специалиста",
+        "description": "Доступно в статусах `manual_review` и `docs_requested`. `approve` - одобрить запрошенное; `counter_offer` - сумма меньше запрошенной; `request_docs` - запросить информацию (infoItems); `reject` - отказ (reasonCode из справочника). Комментарий для клиента обязателен для всех действий, кроме approve.",
+        "operationId": "decide_api_analyst_applications__application_id__decision_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Application Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalystDecisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationAnalyst"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Нет или недействителен токен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Недостаточно прав",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Объект не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Действие недопустимо в текущем статусе",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Ошибка валидации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Actor": {
+        "type": "string",
+        "enum": [
+          "client",
+          "system",
+          "analyst"
+        ],
+        "title": "Actor"
+      },
+      "AnalystAction": {
+        "type": "string",
+        "enum": [
+          "approve",
+          "counter_offer",
+          "request_docs",
+          "reject"
+        ],
+        "title": "AnalystAction"
+      },
+      "AnalystDecisionRequest": {
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/AnalystAction"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount",
+            "description": "Сумма для counter_offer"
+          },
+          "commentForClient": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commentforclient",
+            "description": "Обязателен для всех действий, кроме approve"
+          },
+          "reasonCode": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RejectReason"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Причина отказа из справочника, для reject"
+          },
+          "infoItems": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/InfoRequestItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Infoitems",
+            "descriprion": "Что запросить у клиента, для request_docs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "title": "AnalystDecisionRequest"
+      },
+      "AnalystQueueItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "company": {
+            "$ref": "#/components/schemas/CompanyShort"
+          },
+          "productId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Productid"
+          },
+          "productName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Productname"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "termMonths": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Termmonths"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ApplicationStatus"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat"
+          },
+          "submittedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Submittedat"
+          },
+          "decisionOutcome": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DecisionOutcome"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "decidedBy": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DecidedBy"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "followedSystem": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Followedsystem"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "company",
+          "status",
+          "createdAt"
+        ],
+        "title": "AnalystQueueItem",
+        "description": "Строка очереди аналитика."
+      },
+      "ApplicationAnalyst": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "examples": [
+              "A-1024"
+            ]
+          },
+          "company": {
+            "$ref": "#/components/schemas/Company"
+          },
+          "productId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Productid"
+          },
+          "productName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Productname"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "termMonths": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Termmonths"
+          },
+          "purpose": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Purpose"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "collateral": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Collateral"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "contact": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Contact"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/ApplicationStatus"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updatedat"
+          },
+          "submittedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Submittedat"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/HistoryEvent"
+            },
+            "type": "array",
+            "title": "History",
+            "default": []
+          },
+          "decision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Decision"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "explanation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Explanation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "improvements": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Improvements",
+            "default": []
+          },
+          "offer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Offer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "infoRequest": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InfoRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "signing": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Signing"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "issuance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Issuance"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/CheckDetailed"
+            },
+            "type": "array",
+            "title": "Checks",
+            "default": []
+          },
+          "factors": {
+            "items": {
+              "$ref": "#/components/schemas/ScoredFactor"
+            },
+            "type": "array",
+            "title": "Factors",
+            "default": []
+          },
+          "score": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Score"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "scoringInputs": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScoringInputs"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rateBreakdown": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RateBreakdown"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "systemRecommendation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SystemRecommendation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "company",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ],
+        "title": "ApplicationAnalyst",
+        "description": "Заявка со стороны сотрудника банка: полная информация."
+      },
+      "ApplicationClient": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "examples": [
+              "A-1024"
+            ]
+          },
+          "company": {
+            "$ref": "#/components/schemas/Company"
+          },
+          "productId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Productid"
+          },
+          "productName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Productname"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "termMonths": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Termmonths"
+          },
+          "purpose": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Purpose"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "collateral": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Collateral"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "contact": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Contact"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/ApplicationStatus"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updatedat"
+          },
+          "submittedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Submittedat"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/HistoryEvent"
+            },
+            "type": "array",
+            "title": "History",
+            "default": []
+          },
+          "decision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Decision"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "explanation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Explanation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "improvements": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Improvements",
+            "default": []
+          },
+          "offer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Offer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "infoRequest": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InfoRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "signing": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Signing"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "issuance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Issuance"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/Check"
+            },
+            "type": "array",
+            "title": "Checks",
+            "default": []
+          },
+          "factors": {
+            "items": {
+              "$ref": "#/components/schemas/Factor"
+            },
+            "type": "array",
+            "title": "Factors",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "company",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ],
+        "title": "ApplicationClient",
+        "description": "Заявка со стороны клиента: нет внутренних оценок банка."
+      },
+      "ApplicationCreate": {
+        "properties": {
+          "productId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Productid"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "termMonths": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 120.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Termmonths"
+          },
+          "purpose": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Purpose"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "collateral": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Collateral"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "contact": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Contact"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "ApplicationCreate",
+        "description": "Создание черновика. Поля необязательны - мастер заполняет их по шагам."
+      },
+      "ApplicationStatus": {
+        "type": "string",
+        "enum": [
+          "draft",
+          "submitted",
+          "validation",
+          "enrichment",
+          "scoring",
+          "manual_review",
+          "docs_requested",
+          "approved",
+          "counter_offer",
+          "rejected",
+          "signing",
+          "issued",
+          "declined_by_client"
+        ],
+        "title": "ApplicationStatus"
+      },
+      "ApplicationSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "productId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Productid"
+          },
+          "productName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Productname"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "termMonths": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Termmonths"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ApplicationStatus"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updatedat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ],
+        "title": "ApplicationSummary",
+        "description": "Строка списка \"Мои заявки\" (со стороны клиента)."
+      },
+      "ApplicationUpdate": {
+        "properties": {
+          "productId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Productid"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "termMonths": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 120.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Termmonths"
+          },
+          "purpose": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Purpose"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "collateral": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Collateral"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "contact": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Contact"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "ApplicationUpdate",
+        "description": "Частичное обновление черновика: передаются только изменённые поля."
+      },
+      "Check": {
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/CheckSource"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "examples": [
+              "Бюро кредитных историй"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/CheckStatus"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary",
+            "examples": [
+              "Просрочек за 24 месяца нет"
+            ]
+          },
+          "fetchedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fetchedat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "title",
+          "status",
+          "summary"
+        ],
+        "title": "Check",
+        "description": "Результат проверки по источнику. Клиент не видит деталей."
+      },
+      "CheckDetailed": {
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/CheckSource"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "examples": [
+              "Бюро кредитных историй"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/CheckStatus"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary",
+            "examples": [
+              "Просрочек за 24 месяца нет"
+            ]
+          },
+          "fetchedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fetchedat"
+          },
+          "details": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Details",
+            "description": "Сырые данные источника (для аналитика)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "title",
+          "status",
+          "summary"
+        ],
+        "title": "CheckDetailed"
+      },
+      "CheckSource": {
+        "type": "string",
+        "enum": [
+          "bank",
+          "nbki",
+          "egrul",
+          "pb"
+        ],
+        "title": "CheckSource"
+      },
+      "CheckStatus": {
+        "type": "string",
+        "enum": [
+          "ok",
+          "warning",
+          "fail",
+          "unavailable"
+        ],
+        "title": "CheckStatus"
+      },
+      "Collateral": {
+        "type": "string",
+        "enum": [
+          "real_estate",
+          "equipment",
+          "none"
+        ],
+        "title": "Collateral"
+      },
+      "Company": {
+        "properties": {
+          "inn": {
+            "type": "string",
+            "title": "Inn",
+            "examples": [
+              "1655482318"
+            ]
+          },
+          "type": {
+            "$ref": "#/components/schemas/CompanyType"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CompanyStatus"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "examples": [
+              "ООО 'Продмаркет'"
+            ]
+          },
+          "fullName": {
+            "type": "string",
+            "title": "Fullname",
+            "examples": [
+              "Общество с ограниченной ответственностью 'Продмаркет'"
+            ]
+          },
+          "ogrn": {
+            "type": "string",
+            "title": "Ogrn",
+            "description": "ОГРН для юрлица, ОГРНИП для ИП"
+          },
+          "kpp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kpp",
+            "description": "У ИП отсутствует"
+          },
+          "registeredAt": {
+            "type": "string",
+            "format": "date",
+            "title": "Registeredat"
+          },
+          "director": {
+            "type": "string",
+            "title": "Director",
+            "description": "Руководитель; у ИП - сам предприниматель"
+          },
+          "directorTitle": {
+            "type": "string",
+            "title": "Directortitle",
+            "examples": [
+              "Генеральный директор"
+            ]
+          },
+          "founders": {
+            "items": {
+              "$ref": "#/components/schemas/Founder"
+            },
+            "type": "array",
+            "title": "Founders",
+            "description": "Учредители; у ИП - пусто"
+          },
+          "okved": {
+            "$ref": "#/components/schemas/Okved"
+          },
+          "legalAddress": {
+            "type": "string",
+            "title": "Legaladdress"
+          },
+          "phone": {
+            "type": "string",
+            "title": "Phone"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "account": {
+            "type": "string",
+            "title": "Account",
+            "description": "Расчетный счет в банке"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "description": "Источник реквизитов",
+            "default": "ФНС"
+          },
+          "fetchedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fetchedat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "inn",
+          "type",
+          "status",
+          "name",
+          "fullName",
+          "ogrn",
+          "registeredAt",
+          "director",
+          "directorTitle",
+          "okved",
+          "legalAddress",
+          "phone",
+          "email",
+          "account",
+          "fetchedAt"
+        ],
+        "title": "Company",
+        "description": "Сведения о компании клиента. Предполагается, что клиент уже обслуживается в банке, данные известны заранее"
+      },
+      "CompanyShort": {
+        "properties": {
+          "inn": {
+            "type": "string",
+            "title": "Inn"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "type": {
+            "$ref": "#/components/schemas/CompanyType"
+          }
+        },
+        "type": "object",
+        "required": [
+          "inn",
+          "name",
+          "type"
+        ],
+        "title": "CompanyShort"
+      },
+      "CompanyStatus": {
+        "type": "string",
+        "enum": [
+          "active",
+          "liquidating",
+          "liquidated"
+        ],
+        "title": "CompanyStatus"
+      },
+      "CompanyType": {
+        "type": "string",
+        "enum": [
+          "legal",
+          "ip"
+        ],
+        "title": "CompanyType"
+      },
+      "Consents": {
+        "properties": {
+          "bki": {
+            "type": "boolean",
+            "title": "Bki",
+            "description": "Согласие на запрос в бюро кредитных историй (БКИ)"
+          },
+          "personalData": {
+            "type": "boolean",
+            "title": "Personaldata",
+            "description": "Согласие на обработку персональных данных"
+          }
+        },
+        "type": "object",
+        "required": [
+          "bki",
+          "personalData"
+        ],
+        "title": "Consents"
+      },
+      "Contact": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Name"
+          },
+          "phone": {
+            "type": "string",
+            "pattern": "^\\+?[\\d\\s()-]{10,}$",
+            "title": "Phone"
+          },
+          "email": {
+            "type": "string",
+            "pattern": "^\\S+@\\S+\\.\\S+$",
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "phone",
+          "email"
+        ],
+        "title": "Contact"
+      },
+      "DecidedBy": {
+        "type": "string",
+        "enum": [
+          "system",
+          "analyst"
+        ],
+        "title": "DecidedBy"
+      },
+      "Decision": {
+        "properties": {
+          "outcome": {
+            "$ref": "#/components/schemas/DecisionOutcome"
+          },
+          "requestedAmount": {
+            "type": "integer",
+            "title": "Requestedamount"
+          },
+          "approvedAmount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approvedamount"
+          },
+          "decidedBy": {
+            "$ref": "#/components/schemas/DecidedBy"
+          },
+          "decidedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Decidedat"
+          },
+          "commentForClient": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commentforclient"
+          },
+          "reasonCode": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RejectReason"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "followedSystem": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Followedsystem",
+            "description": "Совпадает ли с рекомендацией системы"
+          }
+        },
+        "type": "object",
+        "required": [
+          "outcome",
+          "requestedAmount",
+          "decidedBy",
+          "decidedAt"
+        ],
+        "title": "Decision"
+      },
+      "DecisionOutcome": {
+        "type": "string",
+        "enum": [
+          "approved",
+          "counter_offer",
+          "rejected",
+          "docs_requested",
+          "manual_review"
+        ],
+        "title": "DecisionOutcome"
+      },
+      "Dictionaries": {
+        "properties": {
+          "purpose": {
+            "items": {
+              "$ref": "#/components/schemas/DictionaryItem"
+            },
+            "type": "array",
+            "title": "Purpose"
+          },
+          "collateralTypes": {
+            "items": {
+              "$ref": "#/components/schemas/DictionaryItem"
+            },
+            "type": "array",
+            "title": "Collateraltypes"
+          },
+          "rejectReasons": {
+            "items": {
+              "$ref": "#/components/schemas/DictionaryItem"
+            },
+            "type": "array",
+            "title": "Rejectreasons"
+          },
+          "infoItems": {
+            "items": {
+              "$ref": "#/components/schemas/InfoRequestItem"
+            },
+            "type": "array",
+            "title": "Infoitems",
+            "description": "Типовые запросы дополнительной информации"
+          }
+        },
+        "type": "object",
+        "required": [
+          "purpose",
+          "collateralTypes",
+          "rejectReasons",
+          "infoItems"
+        ],
+        "title": "Dictionaries"
+      },
+      "DictionaryItem": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "label"
+        ],
+        "title": "DictionaryItem"
+      },
+      "ErrorBody": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/FieldError"
+            },
+            "type": "array",
+            "title": "Fields",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorBody"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorBody"
+          }
+        },
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse"
+      },
+      "Explanation": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generatedat"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "description": "Объяснение строится правилами",
+            "default": "rules"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text",
+          "generatedAt"
+        ],
+        "title": "Explanation"
+      },
+      "Factor": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "detail": {
+            "type": "string",
+            "title": "Detail"
+          },
+          "impact": {
+            "$ref": "#/components/schemas/Impact"
+          },
+          "weight": {
+            "$ref": "#/components/schemas/Weight"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "label",
+          "detail",
+          "impact",
+          "weight"
+        ],
+        "title": "Factor",
+        "description": "Фактор и его влияние. Клиент не видит баллов."
+      },
+      "FieldError": {
+        "properties": {
+          "field": {
+            "type": "string",
+            "title": "Field"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field",
+          "code",
+          "message"
+        ],
+        "title": "FieldError"
+      },
+      "Founder": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "examples": [
+              "Иванов Иван Иванович"
+            ]
+          },
+          "sharePercent": {
+            "type": "number",
+            "title": "Sharepercent",
+            "examples": [
+              100.0
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "sharePercent"
+        ],
+        "title": "Founder"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "Health": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "version"
+        ],
+        "title": "Health"
+      },
+      "HistoryEvent": {
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/ApplicationStatus"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "At"
+          },
+          "actor": {
+            "$ref": "#/components/schemas/Actor"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "at",
+          "actor"
+        ],
+        "title": "HistoryEvent"
+      },
+      "Impact": {
+        "type": "string",
+        "enum": [
+          "positive",
+          "negative",
+          "neutral"
+        ],
+        "title": "Impact"
+      },
+      "InfoAnswer": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "value"
+        ],
+        "title": "InfoAnswer"
+      },
+      "InfoItemType": {
+        "type": "string",
+        "enum": [
+          "text",
+          "number"
+        ],
+        "title": "InfoItemType"
+      },
+      "InfoRequest": {
+        "properties": {
+          "requestedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Requestedat"
+          },
+          "comment": {
+            "type": "string",
+            "title": "Comment"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/InfoRequestItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "respondedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Respondedat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "requestedAt",
+          "comment",
+          "items"
+        ],
+        "title": "InfoRequest"
+      },
+      "InfoRequestItem": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "examples": [
+              "monthly_revenue_confirm"
+            ]
+          },
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "examples": [
+              "Среднемесячная выручка за последние 6 месяцев, ₽"
+            ]
+          },
+          "type": {
+            "$ref": "#/components/schemas/InfoItemType"
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "label",
+          "type"
+        ],
+        "title": "InfoRequestItem"
+      },
+      "InfoResponseRequest": {
+        "properties": {
+          "answers": {
+            "items": {
+              "$ref": "#/components/schemas/InfoAnswer"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Answers"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          }
+        },
+        "type": "object",
+        "required": [
+          "answers"
+        ],
+        "title": "InfoResponseRequest"
+      },
+      "Issuance": {
+        "properties": {
+          "contractNumber": {
+            "type": "string",
+            "title": "Contractnumber"
+          },
+          "signedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Signedat"
+          },
+          "issuedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Issuedat"
+          },
+          "amount": {
+            "type": "integer",
+            "title": "Amount"
+          },
+          "account": {
+            "type": "string",
+            "title": "Account"
+          }
+        },
+        "type": "object",
+        "required": [
+          "contractNumber",
+          "signedAt",
+          "issuedAt",
+          "amount",
+          "account"
+        ],
+        "title": "Issuance"
+      },
+      "LoginRequest": {
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Accountid",
+            "examples": [
+              "prodmarket"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "accountId"
+        ],
+        "title": "LoginRequest"
+      },
+      "LoginResponse": {
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "title": "Accesstoken"
+          },
+          "tokenType": {
+            "type": "string",
+            "title": "Tokentype",
+            "default": "bearer"
+          },
+          "expiresIn": {
+            "type": "integer",
+            "title": "Expiresin",
+            "description": "Время жизни токена, с"
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          }
+        },
+        "type": "object",
+        "required": [
+          "accessToken",
+          "expiresIn",
+          "user"
+        ],
+        "title": "LoginResponse"
+      },
+      "Me": {
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "company": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Company"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Компания клиента; у аналитика - null"
+          },
+          "currentApplicationId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currentapplicationid",
+            "description": "Последняя незавершенная заявка клиента (при наличии)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user"
+        ],
+        "title": "Me"
+      },
+      "Offer": {
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/OfferType"
+          },
+          "amount": {
+            "type": "integer",
+            "title": "Amount"
+          },
+          "termMonths": {
+            "type": "integer",
+            "title": "Termmonths"
+          },
+          "rate": {
+            "type": "number",
+            "title": "Rate"
+          },
+          "rateBreakdown": {
+            "$ref": "#/components/schemas/RateBreakdown"
+          },
+          "monthlyPayment": {
+            "type": "integer",
+            "title": "Monthlypayment"
+          },
+          "collateralRequired": {
+            "$ref": "#/components/schemas/Collateral"
+          },
+          "validUntil": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Validuntil"
+          },
+          "requested": {
+            "$ref": "#/components/schemas/OfferRequested"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "amount",
+          "termMonths",
+          "rate",
+          "rateBreakdown",
+          "monthlyPayment",
+          "collateralRequired",
+          "validUntil",
+          "requested"
+        ],
+        "title": "Offer"
+      },
+      "OfferRequested": {
+        "properties": {
+          "amount": {
+            "type": "integer",
+            "title": "Amount"
+          },
+          "termMonths": {
+            "type": "integer",
+            "title": "Termmonths"
+          },
+          "collateral": {
+            "$ref": "#/components/schemas/Collateral"
+          }
+        },
+        "type": "object",
+        "required": [
+          "amount",
+          "termMonths",
+          "collateral"
+        ],
+        "title": "OfferRequested"
+      },
+      "OfferType": {
+        "type": "string",
+        "enum": [
+          "approved",
+          "counter_offer"
+        ],
+        "title": "OfferType"
+      },
+      "Okved": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "examples": [
+              "47.11"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "examples": [
+              "Торговля розничная преимущественно пищевыми продуктами"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "title"
+        ],
+        "title": "Okved"
+      },
+      "Product": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "examples": [
+              "working-capital"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "examples": [
+              "Оборотный кредит"
+            ]
+          },
+          "note": {
+            "type": "string",
+            "title": "Note",
+            "examples": [
+              "Пополнение оборотных средств"
+            ]
+          },
+          "minAmount": {
+            "type": "integer",
+            "title": "Minamount",
+            "description": "Минимальная сумма, ₽",
+            "examples": [
+              300000
+            ]
+          },
+          "maxAmount": {
+            "type": "integer",
+            "title": "Maxamount",
+            "description": "Максимальная сумма, ₽",
+            "examples": [
+              10000000
+            ]
+          },
+          "maxTermMonths": {
+            "type": "integer",
+            "title": "Maxtermmonths",
+            "examples": [
+              36
+            ]
+          },
+          "spread": {
+            "type": "number",
+            "title": "Spread",
+            "description": "Спред продукта к ключевой ставке, п.п.",
+            "examples": [
+              4.5
+            ]
+          },
+          "rateFrom": {
+            "type": "number",
+            "title": "Ratefrom",
+            "description": "Ставка от, % годовых",
+            "examples": [
+              18.5
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "note",
+          "minAmount",
+          "maxAmount",
+          "maxTermMonths",
+          "spread",
+          "rateFrom"
+        ],
+        "title": "Product"
+      },
+      "Purpose": {
+        "type": "string",
+        "enum": [
+          "working_capital",
+          "cash_gap",
+          "equipment",
+          "renovation",
+          "refinancing"
+        ],
+        "title": "Purpose"
+      },
+      "RateBreakdown": {
+        "properties": {
+          "keyRate": {
+            "type": "number",
+            "title": "Keyrate"
+          },
+          "productSpread": {
+            "type": "number",
+            "title": "Productspread"
+          },
+          "riskPremium": {
+            "type": "number",
+            "title": "Riskpremium"
+          },
+          "rate": {
+            "type": "number",
+            "title": "Rate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "keyRate",
+          "productSpread",
+          "riskPremium",
+          "rate"
+        ],
+        "title": "RateBreakdown"
+      },
+      "RecommendItem": {
+        "properties": {
+          "product": {
+            "$ref": "#/components/schemas/Product"
+          },
+          "best": {
+            "type": "boolean",
+            "title": "Best",
+            "description": "Лучший вариант под запрос"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reasons"
+          },
+          "caveat": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Caveat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product",
+          "best",
+          "reasons"
+        ],
+        "title": "RecommendItem"
+      },
+      "RecommendRequest": {
+        "properties": {
+          "purpose": {
+            "$ref": "#/components/schemas/Purpose"
+          },
+          "amount": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Amount",
+            "description": "Ориентировочная сумма, ₽"
+          },
+          "termMonths": {
+            "type": "integer",
+            "maximum": 120.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Termmonths"
+          },
+          "collateral": {
+            "$ref": "#/components/schemas/Collateral",
+            "default": "none"
+          }
+        },
+        "type": "object",
+        "required": [
+          "purpose",
+          "amount",
+          "termMonths"
+        ],
+        "title": "RecommendRequest"
+      },
+      "RecommendResponse": {
+        "properties": {
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RecommendItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "summary",
+          "items"
+        ],
+        "title": "RecommendResponse"
+      },
+      "RejectReason": {
+        "type": "string",
+        "enum": [
+          "debt_load",
+          "credit_history",
+          "company_inactive",
+          "insufficient_data",
+          "risk_signals",
+          "other"
+        ],
+        "title": "RejectReason"
+      },
+      "Role": {
+        "type": "string",
+        "enum": [
+          "client",
+          "analyst"
+        ],
+        "title": "Role"
+      },
+      "Score": {
+        "properties": {
+          "value": {
+            "type": "integer",
+            "title": "Value"
+          },
+          "max": {
+            "type": "integer",
+            "title": "Max",
+            "default": 1000
+          },
+          "minScore": {
+            "type": "integer",
+            "title": "Minscore",
+            "description": "Порог одобрения"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "minScore"
+        ],
+        "title": "Score"
+      },
+      "ScoredFactor": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "detail": {
+            "type": "string",
+            "title": "Detail"
+          },
+          "impact": {
+            "$ref": "#/components/schemas/Impact"
+          },
+          "weight": {
+            "$ref": "#/components/schemas/Weight"
+          },
+          "points": {
+            "type": "integer",
+            "title": "Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "label",
+          "detail",
+          "impact",
+          "weight",
+          "points"
+        ],
+        "title": "ScoredFactor"
+      },
+      "ScoringInputs": {
+        "properties": {
+          "monthlyRevenue": {
+            "type": "integer",
+            "title": "Monthlyrevenue"
+          },
+          "revenueGrowth": {
+            "type": "number",
+            "title": "Revenuegrowth",
+            "description": "Рост выручки за 12 мес., %"
+          },
+          "loanPayments": {
+            "type": "integer",
+            "title": "Loanpayments",
+            "description": "Ежемесячные платежи по текущим кредитам, ₽"
+          },
+          "overdues24m": {
+            "type": "integer",
+            "title": "Overdues24M",
+            "description": "Число просрочек за 24 мес."
+          },
+          "ageMonths": {
+            "type": "integer",
+            "title": "Agemonths",
+            "description": "Срок работы бизнеса, мес."
+          },
+          "dtiNow": {
+            "type": "number",
+            "title": "Dtinow",
+            "description": "Доля платежей в выручке сейчас, %"
+          },
+          "dtiWithRequested": {
+            "type": "number",
+            "title": "Dtiwithrequested",
+            "description": "Доля платежей с новым кредитом, %"
+          },
+          "affordable": {
+            "type": "integer",
+            "title": "Affordable",
+            "description": "Максимальная сумма в пределах лимита нагрузки, ₽"
+          }
+        },
+        "type": "object",
+        "required": [
+          "monthlyRevenue",
+          "revenueGrowth",
+          "loanPayments",
+          "overdues24m",
+          "ageMonths",
+          "dtiNow",
+          "dtiWithRequested",
+          "affordable"
+        ],
+        "title": "ScoringInputs"
+      },
+      "SignCodeResponse": {
+        "properties": {
+          "sentAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Sentat"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expiresat"
+          },
+          "attemptsLeft": {
+            "type": "integer",
+            "title": "Attemptsleft"
+          },
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code",
+            "description": "Код подписи. Возвращается только в демо-режиме"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sentAt",
+          "expiresAt",
+          "attemptsLeft"
+        ],
+        "title": "SignCodeResponse"
+      },
+      "SignRequest": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "pattern": "^\\d{6}$",
+            "title": "Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code"
+        ],
+        "title": "SignRequest"
+      },
+      "Signing": {
+        "properties": {
+          "contractNumber": {
+            "type": "string",
+            "title": "Contractnumber"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat"
+          },
+          "codeSentAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codesentat"
+          },
+          "signedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signedat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "contractNumber",
+          "createdAt"
+        ],
+        "title": "Signing"
+      },
+      "SubmitRequest": {
+        "properties": {
+          "consents": {
+            "$ref": "#/components/schemas/Consents"
+          }
+        },
+        "type": "object",
+        "required": [
+          "consents"
+        ],
+        "title": "SubmitRequest"
+      },
+      "SystemRecommendation": {
+        "properties": {
+          "outcome": {
+            "$ref": "#/components/schemas/DecisionOutcome"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "termMonths": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Termmonths"
+          },
+          "rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rate"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "outcome",
+          "text"
+        ],
+        "title": "SystemRecommendation"
+      },
+      "TestAccount": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "examples": [
+              "prodmarket"
+            ]
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          },
+          "inn": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inn",
+            "examples": [
+              "1655482318"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "examples": [
+              "ООО 'Продмаркет'"
+            ]
+          },
+          "hint": {
+            "type": "string",
+            "title": "Hint",
+            "examples": [
+              "Заявка с контрпредложением - пройдите сделку до выдачи"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "role",
+          "name",
+          "hint"
+        ],
+        "title": "TestAccount"
+      },
+      "User": {
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "title": "Accountid"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "inn": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inn"
+          }
+        },
+        "type": "object",
+        "required": [
+          "accountId",
+          "role",
+          "name"
+        ],
+        "title": "User"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "Weight": {
+        "type": "string",
+        "enum": [
+          "high",
+          "medium",
+          "low"
+        ],
+        "title": "Weight"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "description": "JWT из POST /api/auth/login",
+        "scheme": "bearer"
+      }
+    }
+  }
+}
