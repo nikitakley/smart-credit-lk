@@ -6,6 +6,19 @@
 
 | Компонент | Версия | Лицензия | Назначение |
 |---|---|---|---|
+| Python | 3.12 | PSF-2.0 | Язык бэкенда |
+| FastAPI | 0.161.1 | MIT | Веб-фреймворк API |
+| Starlette | 1.9.0 | BSD-3-Clause | ASGI-основа FastAPI |
+| Pydantic | 2.14.1 | MIT | Схемы и валидация данных |
+| pydantic-settings | 2.16.1 | MIT | Настройки из переменных окружения |
+| PyJWT | 2.15.1 | MIT | JWT-токены |
+| Uvicorn | 0.54.0 | BSD-3-Clause | ASGI-сервер |
+| pytest (dev) | 9.1.1 | MIT | Тесты |
+| httpx2 (dev) | 2.16.0 | BSD-3-Clause | HTTP-клиент для тестов |
+| uv | 0.11.32 | MIT / Apache-2.0 | Менеджер зависимостей и lock-файл |
+| PostgreSQL (образ `postgres:16-alpine`) | 16 | PostgreSQL License | СУБД |
+
+Полный список транзитивных зависимостей с точными версиями — в `backend/uv.lock`.
 
 ## Смоделированные внешние сервисы
 
