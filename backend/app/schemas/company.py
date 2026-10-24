@@ -22,8 +22,8 @@ class Company(CamelModel):
     inn: str = Field(examples=["1655482318"])
     type: CompanyType
     status: CompanyStatus
-    name: str = Field(examples=["ООО \"Продмаркет\""])
-    full_name: str = Field(examples=["Общество с ограниченной ответственностью \"Продмаркет\""])
+    name: str = Field(examples=["ООО 'Продмаркет'"])
+    full_name: str = Field(examples=["Общество с ограниченной ответственностью 'Продмаркет'"])
     ogrn: str = Field(description="ОГРН для юрлица, ОГРНИП для ИП")
     kpp: str | None = Field(default=None, description="У ИП отсутствует")
     registered_at: date

@@ -9,7 +9,7 @@ class TestAccount(CamelModel):
     id: str = Field(examples=["prodmarket"])
     role: Role
     inn: str | None = Field(default=None, examples=["1655482318"])
-    name: str = Field(examples=["ООО \"Продмаркет\""])
+    name: str = Field(examples=["ООО 'Продмаркет'"])
     hint: str = Field(examples=["Заявка с контрпредложением - пройдите сделку до выдачи"])
 
 
