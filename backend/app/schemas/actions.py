@@ -5,7 +5,7 @@ from datetime import datetime
 from pydantic import Field
 
 from app.schemas.base import CamelModel
-from app.schemas.enums import AnalystAction
+from app.schemas.enums import AnalystAction, RejectReason
 from app.schemas.application import InfoRequestItem
 
 
@@ -26,7 +26,7 @@ class AnalystDecisionRequest(CamelModel):
     action: AnalystAction
     amount: int | None = Field(default=None, gt=0, description="Сумма для counter_offer")
     comment_for_client: str | None = Field(default=None, description="Обязателен для всех действий, кроме approve")
-    reason_code: str | None = Field(default=None, description="Причина отказа из справочника, для reject")
+    reason_code: RejectReason | None = Field(default=None, description="Причина отказа из справочника, для reject")
     info_items: list[InfoRequestItem] | None = Field(default=None, descriprion="Что запросить у клиента, для request_docs")
 
 

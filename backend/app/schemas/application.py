@@ -18,6 +18,7 @@ from app.schemas.enums import (
     InfoItemType,
     OfferType,
     Purpose,
+    RejectReason,
     Weight,
 )
 from app.schemas.company import Company, CompanyShort
@@ -142,7 +143,7 @@ class Decision(CamelModel):
     decided_by: DecidedBy
     decided_at: datetime
     comment_for_client: str | None = None
-    reason_code: str | None = None
+    reason_code: RejectReason | None = None
     followed_system: bool | None = Field(default=None, description="Совпадает ли с рекомендацией системы")
 
 

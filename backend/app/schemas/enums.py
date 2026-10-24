@@ -97,6 +97,15 @@ class Weight(StrEnum):
     low = "low"
 
 
+class RejectReason(StrEnum):
+    debt_load = "debt_load"  # высокая долговая нагрузка
+    credit_history = "credit_history"  # негативная кредитная история
+    company_inactive = "company_inactive"  # компания не действует
+    insufficient_data = "insufficient_data"  # недостаточно данных для оценки
+    risk_signals = "risk_signals"  # признаки повышенного риска
+    other = "other"  # другая причина
+
+
 class DecisionOutcome(StrEnum):
     approved = "approved"
     counter_offer = "counter_offer"

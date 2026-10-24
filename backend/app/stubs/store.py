@@ -45,15 +45,6 @@ from app.schemas.enums import (
 from app.services.finance import KEY_RATE, annuity_payment
 from app.stubs.data import MSK, PRODUCTS_BY_ID, build_applications
 
-REJECT_REASONS = {
-    "debt_load": "Высокая долговая нагрузка",
-    "credit_history": "Негативная кредитная история",
-    "company_inactive": "Компания не действует",
-    "insufficient_data": "Недостаточно данных для оценки",
-    "risk_signals": "Признаки повышенного риска",
-    "other": "Другая причина",
-}
-
 
 class _State:
     def __init__(self) -> None:
@@ -315,7 +306,7 @@ def analyst_decide(app_id: str, req: AnalystDecisionRequest) -> ApplicationAnaly
         if req.amount is None or not (0 < req.amount < (app.amount or 0)):
             errors.append(FieldError(field="amount", code="out_of_range",
                                      message="Сумма контрпредложения должна быть меньше запрошенной"))
-    if req.action == AnalystAction.reject and req.reason_code not in REJECT_REASONS:
+    if req.action == AnalystAction.reject and req.reason_code is None:
         errors.append(FieldError(field="reasonCode", code="required", message="Выберите причину отказа"))
     if req.action == AnalystAction.request_docs and not req.info_items:
         errors.append(FieldError(field="infoItems", code="required", message="Укажите, что запросить у клиента"))
