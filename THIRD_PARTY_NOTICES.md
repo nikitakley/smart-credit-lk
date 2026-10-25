@@ -17,8 +17,16 @@
 | httpx2 (dev) | 2.16.0 | BSD-3-Clause | HTTP-клиент для тестов |
 | uv | 0.11.32 | MIT / Apache-2.0 | Менеджер зависимостей и lock-файл |
 | PostgreSQL (образ `postgres:16-alpine`) | 16 | PostgreSQL License | СУБД |
+| React | 19.3.1 | MIT | UI-библиотека фронтенда |
+| React DOM | 19.3.1 | MIT | Рендеринг React в браузере |
+| React Router (`react-router-dom`) | 7.18.4 | MIT | Маршрутизация фронтенда |
+| Шрифт Manrope (`@fontsource-variable/manrope`) | 5.3.0 | SIL OFL 1.1 | Шрифт интерфейса, подключён локально |
+| Vite (dev) | 8.3.4 | MIT | Сборка и dev-сервер фронтенда |
+| @vitejs/plugin-react (dev) | 6.1.2 | MIT | Поддержка React в Vite |
 
-Полный список транзитивных зависимостей с точными версиями — в `backend/uv.lock`.
+Полный список транзитивных зависимостей с точными версиями — в `backend/uv.lock` и `frontend/package-lock.json`.
+
+Иллюстрации и иконки фронтенда (`frontend/src/components/art`, `ProductIcon.jsx`) нарисованы командой в SVG. Фирменные цвета и элемент «фундамент» — по брендбуку Альфа-Банка, файл логотипа не используется.
 
 ## Смоделированные внешние сервисы
 
