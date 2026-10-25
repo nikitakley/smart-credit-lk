@@ -1,0 +1,168 @@
+/* =====================================================================
+   Дизайн-токены «Умный кредитный кабинет» по брендбуку Альфа-Банка v.02
+   и сайту alfabank.ru/sme (раздел кредитов для бизнеса, октябрь 2026)
+   Источник значений помечен в комментарии:
+     [BB]   — прямо из брендбука
+     [SITE] — снято с alfabank.ru (computed styles): поверхности, радиусы, кнопки, поля, кегли
+     [DER]  — производное от цвета брендбука (оттенок для состояний / доступности)
+     [ASM]  — допущение команды
+   Подключение: import './styles/tokens.css' в main.jsx
+   Шрифт: npm i @fontsource-variable/manrope  →  import '@fontsource-variable/manrope'
+   (локально, без CDN — решение должно работать автономно)
+   ===================================================================== */
+
+:root {
+  /* ---------- Основная палитра [BB] ---------- */
+  --alfa-red: #EF3124;          /* Pantone 2035 CU — ОБЯЗАТЕЛЕН; на сайте тот же rgb(239,49,36) */
+  --alfa-black: #000000;        /* Pantone Process Black CU — фон шапки, как на сайте */
+  --alfa-grey-dark: #505759;    /* Pantone 445 CU */
+  --alfa-grey-light: #D9D9D6;   /* Pantone Cool Grey 1 CU */
+  --alfa-white: #FFFFFF;        /* предпочтительный фон для логотипа */
+
+  /* ---------- Дополнительная палитра ---------- */
+  --alfa-violet: #6A22D0;       /* Pantone 2597 CU, HEX снят с изображений брендбука [DER] — акцент ИИ-помощника */
+  --alfa-aqua: #88DBDF;         /* Pantone 318 C, HEX по таблице Pantone [ASM] — только декор */
+  --alfa-metal: #8A8D8F;        /* Pantone 877 (металлик), приближение [ASM] — не используем в UI */
+
+  /* ---------- Нейтральные поверхности [SITE] ---------- */
+  --ink: #212124;               /* основной текст rgba(3,3,6,.88) на белом; тёмные кнопки и выбранные чипсы */
+  --ink-secondary: #646466;     /* вторичный текст rgba(3,3,6,.616): 5.9:1 на белом, 5.3:1 на #F2F3F5 */
+  --surface-muted: #F2F3F5;     /* серые панели на белой странице */
+  --surface-hover: #E9EBEE;     /* [ASM] серая строка списка при наведении */
+  --control-fill: rgba(15, 25, 55, 0.1);  /* серые кнопки и невыбранные чипсы */
+  --field-fill: rgba(38, 55, 88, 0.06);   /* «заливочные» поля ввода */
+  --field-line: rgba(3, 3, 6, 0.2);       /* [ASM] линия под полем */
+  --on-dark-fill: rgba(222, 222, 238, 0.13); /* кнопки на чёрной шапке */
+  --on-dark-text: rgba(255, 255, 255, 0.94);
+  --on-dark-muted: rgba(255, 255, 255, 0.64); /* [ASM] неактивные пункты меню на чёрном */
+
+  /* ---------- Производные оттенки [DER] ---------- */
+  --red-hover: #D42A1E;         /* 5.06:1 с белым */
+  --red-text: #C8221A;          /* красный мелкий текст/ссылки: 5.68:1 на белом, 5.1:1 на #F2F3F5 */
+  --red-tint: #FDECEA;          /* фон ошибок/алертов */
+  --violet-tint: #F1EAFB;       /* фон сообщений ИИ-помощника */
+  --grey-border: rgba(3, 3, 6, 0.1); /* разделители — тонкие, как на сайте */
+
+  /* ---------- Статусы заявки [ASM] — в брендбуке нет ---------- */
+  --status-success: #177A3A;    /* одобрено, выдано: ≥4.5:1 и на белом, и на сером */
+  --status-success-tint: #E7F4EA;
+  --status-warning: #9A5B00;    /* дозапрос, контрпредложение: ≥4.5:1 на сером */
+  --status-warning-tint: #FFF4E0;
+  --status-info: var(--ink-secondary); /* в обработке */
+  --status-info-tint: rgba(15, 25, 55, 0.07);
+  --status-error: var(--red-text); /* отказ/ошибка: красный + иконка + текст, не только цвет */
+  --status-error-tint: var(--red-tint);
+
+  /* ---------- Семантика ---------- */
+  --bg-shell: var(--alfa-black);     /* шапка; белый «лист» страницы наезжает на неё скруглением [SITE] */
+  --bg-page: var(--alfa-white);
+  --bg-surface: var(--surface-muted); /* карточки-панели */
+  --bg-raised: var(--alfa-white);     /* карточка внутри серой панели */
+  --bg-inverse: var(--ink);
+  --text-primary: var(--ink);
+  --text-secondary: var(--ink-secondary);
+  --text-inverse: var(--alfa-white);
+  --border: var(--grey-border);
+  --focus-ring: 0 0 0 3px rgba(239, 49, 36, 0.35);
+
+  /* ---------- Типографика ----------
+     Брендбук: Styrene A / Styrene B, сайт: Alfa Interface Sans — оба шрифта проприетарные.
+     Замена: Manrope (SIL OFL 1.1, кириллица) [ASM]. Указать в THIRD_PARTY_NOTICES.
+     Кегли и интерлиньяж — как на сайте [SITE]. */
+  --font-base: 'Manrope Variable', 'Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --fs-display: 48px;  --lh-display: 52px;  /* крупная сумма, заголовок промо */
+  --fs-h1: 40px;       --lh-h1: 48px;       /* заголовок страницы */
+  --fs-h2: 30px;       --lh-h2: 36px;       /* заголовок секции */
+  --fs-h3: 22px;       --lh-h3: 26px;       /* заголовок карточки, крупное значение */
+  --fs-body: 16px;     --lh-body: 24px;
+  --fs-small: 14px;    --lh-small: 20px;
+  --fs-caption: 12px;  --lh-caption: 16px;  /* подписи над значениями: «Ставка», «Срок» */
+
+  --fw-regular: 400;
+  --fw-medium: 500;    /* кнопки, как на сайте */
+  --fw-semibold: 600;
+  --fw-bold: 700;      /* все заголовки, значения в полях */
+  --fw-black: 800;
+
+  /* ---------- Фундамент [BB] ----------
+     Подчёркивающая линия из логотипа — элемент узнаваемости.
+     Используем: под ключевой цифрой, активной вкладкой, заголовком раздела, прогрессом. */
+  --fundament-height: 4px;
+  --fundament-color: var(--alfa-red);
+
+  /* ---------- Сетка, отступы, радиусы ---------- */
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+  --space-5: 24px; --space-6: 32px; --space-7: 48px; --space-8: 64px;
+  --radius-s: 4px;      /* верх поля ввода [SITE] */
+  --radius-m: 12px;     /* кнопки [SITE]; маленькие кнопки — 10px */
+  --radius-l: 16px;     /* белая карточка внутри панели [SITE] */
+  --radius-xl: 32px;    /* серая панель [SITE] */
+  --radius-sheet: 64px; /* белый лист под шапкой [SITE] */
+  --radius-pill: 999px;
+  --container: 1140px;  /* [SITE] */
+  --control-height: 48px;   /* [ASM] между 40 и 56 с сайта */
+  --control-height-s: 40px; /* [SITE] кнопки в карточках, чипсы */
+  --field-height: 64px;     /* [SITE] */
+}
+
+/* ---------- Базовые стили ---------- */
+html, body {
+  margin: 0;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: var(--font-base);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+}
+h1 { font-size: var(--fs-h1); line-height: var(--lh-h1); font-weight: var(--fw-bold); margin: 0; }
+h2 { font-size: var(--fs-h2); line-height: var(--lh-h2); font-weight: var(--fw-bold); margin: 0; }
+h3 { font-size: var(--fs-h3); line-height: var(--lh-h3); font-weight: var(--fw-bold); margin: 0; }
+a  { color: var(--red-text); }
+:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+/* Фундамент: <span class="fundament">2 000 000 ₽</span> */
+.fundament { position: relative; display: inline-block; padding-bottom: calc(var(--fundament-height) + 4px); }
+.fundament::after {
+  content: ''; position: absolute; left: 0; bottom: 0;
+  width: 100%; height: var(--fundament-height); background: var(--fundament-color);
+}
+
+/* Кнопки [SITE]: скругление 12, вес 500, без теней
+   primary   — тёмная (#212124), белый текст — для большинства действий
+   accent    — красная, ОДНА на экран: «Отправить заявку», «Принять предложение».
+               Белый на #EF3124 = 4.09:1 → текст 19px Bold (крупный текст по WCAG, порог 3:1)
+   secondary — серая заливка, как «Узнать подробнее» на сайте
+   btn--s    — 40px, для действий внутри карточек */
+.btn {
+  height: var(--control-height); padding: 0 var(--space-5);
+  border-radius: var(--radius-m); border: 0;
+  font: var(--fw-medium) var(--fs-body)/1 var(--font-base);
+  cursor: pointer; transition: background .15s;
+}
+.btn--s { height: var(--control-height-s); padding: 0 19px; border-radius: 10px; font-size: var(--fs-small); }
+.btn-primary   { background: var(--ink); color: var(--text-inverse); }
+.btn-primary:hover { background: #000; }
+.btn-accent    { background: var(--alfa-red); color: var(--text-inverse); font-size: 19px; font-weight: var(--fw-bold); }
+.btn-accent:hover { background: var(--red-hover); }
+.btn-secondary { background: var(--control-fill); color: var(--text-primary); }
+.btn-secondary:hover { background: rgba(15, 25, 55, 0.16); }
+.btn:disabled  { background: var(--control-fill); color: var(--text-secondary); opacity: .6; cursor: not-allowed; }
+
+/* Панель: серая, без тени [SITE]. Внутри неё белые блоки — .raised */
+.card { background: var(--bg-surface); border-radius: var(--radius-xl); padding: var(--space-6); }
+.raised { background: var(--bg-raised); border-radius: var(--radius-l); padding: var(--space-5); }
+@media (max-width: 600px) { .card { border-radius: var(--radius-l); padding: var(--space-5); } }
+
+/* Статус-бейдж заявки */
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: var(--radius-pill);
+         font-size: var(--fs-small); font-weight: var(--fw-semibold); }
+.badge--success { background: var(--status-success-tint); color: var(--status-success); }
+.badge--warning { background: var(--status-warning-tint); color: var(--status-warning); }
+.badge--info    { background: var(--status-info-tint);    color: var(--status-info); }
+.badge--error   { background: var(--status-error-tint);   color: var(--status-error); }
+
+/* ИИ-помощник: фиолетовый из доп. палитры отделяет ИИ от решений банка */
+.ai-bubble { background: var(--violet-tint); border-radius: var(--radius-l); padding: var(--space-4) var(--space-5); }
+.ai-label  { color: var(--alfa-violet); font-size: var(--fs-caption); font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: .04em; }
