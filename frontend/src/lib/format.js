@@ -1,5 +1,5 @@
 // Неразрывный пробел перед ₽ — знак не отрывается от суммы при переносе
-export const formatRub = (n) => `${Math.round(n).toLocaleString('ru-RU')} ₽`;
+export const formatRub = (n) => (n == null ? '—' : `${Math.round(n).toLocaleString('ru-RU')} ₽`);
 
 // 10 000 000 → «10 млн ₽», 300 000 → «300 тыс. ₽» — для условий продуктов
 export function formatCompactRub(n) {
@@ -26,6 +26,16 @@ export function plural(n, [one, few, many]) {
 }
 
 export const formatMonths = (n) => `${n} ${plural(n, ['месяц', 'месяца', 'месяцев'])}`;
+
+// 28 → «2 года 4 месяца» — срок работы бизнеса из scoringInputs.ageMonths
+export function formatAge(months) {
+  const y = Math.floor(months / 12);
+  const m = months % 12;
+  const parts = [];
+  if (y) parts.push(`${y} ${plural(y, ['год', 'года', 'лет'])}`);
+  if (m) parts.push(`${m} ${plural(m, ['месяц', 'месяца', 'месяцев'])}`);
+  return parts.join(' ') || 'меньше месяца';
+}
 
 // Аннуитетный платёж, округлён до 100 ₽
 export function annuity(amount, ratePercent, months) {

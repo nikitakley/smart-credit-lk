@@ -7,29 +7,32 @@ import Page from '../../components/Page.jsx';
 import ArtAnalyst from '../../components/art/ArtAnalyst.jsx';
 import { listApplications, resetDemo } from '../../api/client.js';
 import { useLoad } from '../../api/useLoad.js';
+import { IN_PROGRESS } from '../../config/statuses.js';
 import { formatDate, formatRub } from '../../lib/format.js';
 
-const WAITING = ['submitted', 'scoring'];
+// Строки очереди — AnalystQueueItem: решение приходит как decisionOutcome / decidedBy / followedSystem
 const FILTERS = [
   { key: 'all', label: 'Все', test: () => true },
-  { key: 'waiting', label: 'Ждут решения', test: (a) => WAITING.includes(a.status) },
-  { key: 'docs', label: 'Нужны документы', test: (a) => a.status === 'docs_requested' },
-  { key: 'decided', label: 'С решением', test: (a) => !!a.decision },
+  { key: 'review', label: 'На проверке у специалиста', test: (a) => a.status === 'manual_review' },
+  { key: 'progress', label: 'В обработке', test: (a) => IN_PROGRESS.includes(a.status) },
+  { key: 'docs', label: 'Нужна информация', test: (a) => a.status === 'docs_requested' },
+  { key: 'decided', label: 'С решением', test: (a) => !!a.decisionOutcome },
 ];
 
 function stats(apps) {
-  const decided = apps.filter((a) => a.decision);
-  const followed = decided.filter((a) => a.decision.followedAi).length;
+  // Совпадение считаем только по решениям специалиста — автоматические решения совпадают всегда
+  const byAnalyst = apps.filter((a) => a.decidedBy === 'analyst' && a.followedSystem != null);
+  const followed = byAnalyst.filter((a) => a.followedSystem).length;
   return [
-    { label: 'Заявок в очереди', value: apps.length },
-    { label: 'Ждут решения', value: apps.filter((a) => WAITING.includes(a.status)).length },
-    { label: 'Нужны документы', value: apps.filter((a) => a.status === 'docs_requested').length },
-    { label: 'Решений совпало с рекомендацией', value: decided.length ? `${Math.round((followed / decided.length) * 100)}%` : '—' },
+    { label: 'Ждут решения', value: apps.filter((a) => a.status === 'manual_review').length },
+    { label: 'В обработке', value: apps.filter((a) => IN_PROGRESS.includes(a.status)).length },
+    { label: 'Ждут ответа клиента', value: apps.filter((a) => a.status === 'docs_requested').length },
+    { label: 'Решений совпало с рекомендацией', value: byAnalyst.length ? `${Math.round((followed / byAnalyst.length) * 100)}%` : '—' },
   ];
 }
 
 export default function Queue() {
-  const { data: apps } = useLoad(listApplications, []);
+  const { data: apps, error } = useLoad(() => listApplications(), [], { pollMs: 15000 });
   const [filter, setFilter] = useState('all');
   const active = FILTERS.find((f) => f.key === filter);
   const shown = (apps ?? []).filter(active.test);
@@ -63,7 +66,8 @@ export default function Queue() {
           </div>
         </div>
 
-        {!apps && <p className="muted">Загружаем…</p>}
+        {error && <p className="caveat">{error.message}</p>}
+        {!apps && !error && <p className="muted">Загружаем…</p>}
         <ul className="queue">
           {shown.map((a) => (
             <li key={a.id}>
@@ -71,10 +75,10 @@ export default function Queue() {
                 <Avatar name={a.company.name} light />
                 <span className="queue-row__main">
                   <b>{a.company.name}</b>
-                  <span className="small muted">{a.id} · ИНН {a.company.inn}</span>
+                  <span className="small muted">{a.id} · ИНН {a.company.inn}{a.productName ? ` · ${a.productName}` : ''}</span>
                 </span>
                 <span className="queue-row__fact"><span className="caption muted">Сумма</span><b>{formatRub(a.amount)}</b></span>
-                <span className="queue-row__fact"><span className="caption muted">Создана</span>{formatDate(a.createdAt)}</span>
+                <span className="queue-row__fact"><span className="caption muted">Подана</span>{a.submittedAt ? formatDate(a.submittedAt) : '—'}</span>
                 <StatusBadge status={a.status} />
                 <span className="queue-row__arrow" aria-hidden="true">→</span>
               </Link>

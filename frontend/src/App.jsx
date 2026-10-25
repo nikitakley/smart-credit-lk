@@ -6,6 +6,7 @@ import Assistant from './pages/client/Assistant.jsx';
 import Catalog from './pages/client/Catalog.jsx';
 import ApplicationWizard from './pages/client/ApplicationWizard.jsx';
 import ApplicationStatus from './pages/client/ApplicationStatus.jsx';
+import MyApplications from './pages/client/MyApplications.jsx';
 import DecisionExplain from './pages/client/DecisionExplain.jsx';
 import Offer from './pages/client/Offer.jsx';
 import SignContract from './pages/client/SignContract.jsx';
@@ -24,6 +25,7 @@ export default function App() {
         <Route path="/assistant" element={<Assistant />} />
         <Route path="/catalog" element={<Catalog />} />
         <Route path="/apply" element={<ApplicationWizard />} />
+        <Route path="/applications" element={<MyApplications />} />
         <Route path="/applications/:id" element={<ApplicationStatus />} />
         <Route path="/applications/:id/decision" element={<DecisionExplain />} />
         <Route path="/applications/:id/offer" element={<Offer />} />

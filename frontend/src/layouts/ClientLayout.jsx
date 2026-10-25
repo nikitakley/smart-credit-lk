@@ -1,20 +1,24 @@
 import { Link, Navigate, NavLink, Outlet } from 'react-router-dom';
 import Footer from '../components/Footer.jsx';
 import UserMenu from '../components/UserMenu.jsx';
-import { currentSession, getClientSession } from '../api/client.js';
+import { currentSession, getMe } from '../api/client.js';
 import { useLoad } from '../api/useLoad.js';
+
+const NAV = [
+  { to: '/assistant', label: 'Подбор кредита' },
+  { to: '/catalog', label: 'Каталог' },
+  { to: '/applications', label: 'Мои заявки' },
+];
 
 // Кабинет клиента — только после входа под тестовой учёткой клиента.
 // Hero и белый лист рисует сама страница (components/Page.jsx).
 export default function ClientLayout() {
-  const { data: session } = useLoad(getClientSession, []);
-  if (currentSession()?.role !== 'client') return <Navigate to="/login" replace />;
+  const { data: me } = useLoad(getMe, []);
+  const session = currentSession();
+  if (session?.role !== 'client') return <Navigate to="/login" replace />;
 
-  const NAV = [
-    { to: '/assistant', label: 'Подбор кредита' },
-    { to: '/catalog', label: 'Каталог' },
-    ...(session?.applicationId ? [{ to: `/applications/${session.applicationId}`, label: 'Моя заявка' }] : []),
-  ];
+  const name = me?.company?.name ?? session.name;
+  const role = me?.company?.type === 'ip' ? 'Индивидуальный предприниматель' : 'Юридическое лицо';
 
   return (
     <div className="shell">
@@ -29,7 +33,7 @@ export default function ClientLayout() {
           </nav>
           <div className="app-header__aside">
             <Link to="/apply" className="header-btn">Новая заявка</Link>
-            {session && <UserMenu name={session.name} role={session.company.type === 'ip' ? 'Индивидуальный предприниматель' : 'Юридическое лицо'} />}
+            <UserMenu name={name} role={role} />
           </div>
         </div>
       </header>

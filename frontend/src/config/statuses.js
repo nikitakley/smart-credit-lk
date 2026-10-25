@@ -1,27 +1,36 @@
-// [ASM] Статусы заявки — по документу «Контракт фронт ↔ бэк», финально СОГЛАСОВАТЬ С БЭКЕНДОМ (Никита).
-// При изменениях правится только этот файл: таймлайн и бейджи берут всё отсюда.
+// Статусы заявки — как ApplicationStatus в docs/api/openapi.json.
+// При изменениях правится только этот файл: таймлайн, бейджи и фильтры берут всё отсюда.
 // tone — вариант бейджа/маркера: success | warning | info | error
 import { formatDateTime } from '../lib/format.js';
 
 export const STATUS = {
-  submitted:          { label: 'Заявка подана',       tone: 'info' },
-  scoring:            { label: 'Проверяем данные',    tone: 'info' },
-  docs_requested:     { label: 'Нужны документы',     tone: 'warning' },
-  approved:           { label: 'Одобрено',            tone: 'success' },
-  counter_offer:      { label: 'Контрпредложение',    tone: 'warning' },
-  rejected:           { label: 'Отказ',               tone: 'error' },
-  signing:            { label: 'Подписание договора', tone: 'info' },
-  issued:             { label: 'Кредит выдан',        tone: 'success' },
-  declined_by_client: { label: 'Клиент отказался',    tone: 'info' },
+  draft:              { label: 'Черновик',                  tone: 'info' },
+  submitted:          { label: 'Заявка подана',             tone: 'info' },
+  validation:         { label: 'Проверяем анкету',          tone: 'info' },
+  enrichment:         { label: 'Запрашиваем сведения',      tone: 'info' },
+  scoring:            { label: 'Оцениваем заявку',          tone: 'info' },
+  manual_review:      { label: 'На проверке у специалиста', tone: 'info' },
+  docs_requested:     { label: 'Нужна информация',          tone: 'warning' },
+  approved:           { label: 'Одобрено',                  tone: 'success' },
+  counter_offer:      { label: 'Контрпредложение',          tone: 'warning' },
+  rejected:           { label: 'Отказ',                     tone: 'error' },
+  signing:            { label: 'Подписание договора',       tone: 'info' },
+  issued:             { label: 'Кредит выдан',              tone: 'success' },
+  declined_by_client: { label: 'Клиент отказался',          tone: 'info' },
 };
 
 export const ACTORS = { client: 'клиент', system: 'система', analyst: 'аналитик' };
 
+// Заявка в обработке у банка (конвейер ещё работает)
+export const IN_PROGRESS = ['submitted', 'validation', 'enrichment', 'scoring'];
+// Решение аналитика бэкенд принимает только в этих статусах
+export const ANALYST_DECIDES = ['manual_review', 'docs_requested'];
+
 // Основной путь заявки: по нему таймлайн показывает ещё не пройденные шаги
-export const FLOW = ['submitted', 'scoring', 'approved', 'signing', 'issued'];
+export const FLOW = ['submitted', 'validation', 'enrichment', 'scoring', 'approved', 'signing', 'issued'];
 
 // Статусы вне основного пути и место, которое они занимают на нём
-const FLOW_POSITION = { docs_requested: 1, counter_offer: 2 };
+const FLOW_POSITION = { manual_review: 3, docs_requested: 3, counter_offer: 4 };
 
 // После этих статусов будущих шагов нет
 export const TERMINAL = ['rejected', 'issued', 'declined_by_client'];
