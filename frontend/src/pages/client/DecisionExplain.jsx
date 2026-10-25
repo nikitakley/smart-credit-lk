@@ -8,13 +8,13 @@ import Page from '../../components/Page.jsx';
 import ArtDecision from '../../components/art/ArtDecision.jsx';
 import { getApplication } from '../../api/client.js';
 import { useLoad } from '../../api/useLoad.js';
-import { DECISION_LEAD, decisionHeadline } from '../../lib/decision.js';
+import { decisionHeadline, decisionLead } from '../../lib/decision.js';
 
 export default function DecisionExplain() {
   const { id } = useParams();
   const { data: app, error } = useLoad(() => getApplication(id), [id]);
 
-  if (error) return <Page title="Заявка не найдена" subtitle={`Проверьте номер: ${id}`} />;
+  if (error) return <Page title="Заявка не найдена" subtitle={error.message} />;
   if (!app) return <Page title="Почему такое решение" subtitle="Загружаем решение…" />;
 
   const d = app.decision;
@@ -42,9 +42,9 @@ export default function DecisionExplain() {
           {/* Решение банка — нейтральные панели; объяснение ИИ — отдельно, фиолетовым */}
           <Card className="stack">
             <h2>Что повлияло на решение</h2>
-            <p className="muted m0">{DECISION_LEAD[d.outcome]}</p>
+            <p className="muted m0">{decisionLead(d.outcome)}</p>
             {d.commentForClient && <p className="m0 raised"><b>Комментарий банка:</b> {d.commentForClient}</p>}
-            <FactorList factors={app.factors} />
+            <FactorList factors={app.factors ?? []} />
             <FactorLegend />
           </Card>
 
@@ -55,13 +55,13 @@ export default function DecisionExplain() {
         </div>
 
         <aside className="stack">
-          {app.aiExplanation && (
+          {app.explanation && (
             <>
-              <AiHint label="Объяснение простыми словами">{app.aiExplanation.text}</AiHint>
+              <AiHint label="Объяснение простыми словами">{app.explanation.text}</AiHint>
               <p className="muted small m0">Сформировано автоматически из тех же данных, по которым принято решение. Это пояснение, а не решение банка.</p>
             </>
           )}
-          {app.improvements.length > 0 && (
+          {app.improvements?.length > 0 && (
             <Card className="stack">
               <h3>Как улучшить условия</h3>
               <ol className="m0">{app.improvements.map((s) => <li key={s}>{s}</li>)}</ol>

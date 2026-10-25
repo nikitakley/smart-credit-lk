@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AiHint from '../../components/AiHint.jsx';
 import Badge from '../../components/Badge.jsx';
@@ -7,100 +7,144 @@ import Card from '../../components/Card.jsx';
 import Field from '../../components/Field.jsx';
 import Page from '../../components/Page.jsx';
 import ArtDocument from '../../components/art/ArtDocument.jsx';
-import { createApplication, getClientSession, getCompany, getProducts } from '../../api/client.js';
+import {
+  createDraft, fieldErrors, getApplication, getDictionaries, getMyCompany, getProducts, submitApplication, updateDraft,
+} from '../../api/client.js';
 import { useLoad } from '../../api/useLoad.js';
 import { annuity, formatDate, formatMonths, formatPercent, formatRub } from '../../lib/format.js';
 
 const STEPS = ['Компания', 'Контакты', 'Условия', 'Отправка'];
 const TERMS = [3, 6, 12, 18, 24, 36, 48, 60];
-// Цель — enum из контракта с бэком (+ cash_gap из помощника подбора)
-const PURPOSES = [
-  { value: 'working_capital', label: 'Оборотные средства' },
-  { value: 'cash_gap', label: 'Кассовый разрыв' },
-  { value: 'equipment', label: 'Оборудование, транспорт' },
-  { value: 'renovation', label: 'Ремонт, расширение' },
-  { value: 'refinancing', label: 'Рефинансирование' },
-];
 const CONSENTS = [
   { key: 'bki', label: 'Согласие на запрос в бюро кредитных историй' },
   { key: 'personalData', label: 'Согласие на обработку персональных данных' },
 ];
+// На каком шаге поле — чтобы вернуть клиента к ошибке, которую нашёл сервер
+const FIELD_STEP = { contact: 1, productId: 2, amount: 2, termMonths: 2, purpose: 2, collateral: 2 };
 
 export default function ApplicationWizard() {
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
+  const { data: company, error: companyError } = useLoad(getMyCompany, []);
   const { data: products } = useLoad(getProducts, []);
-  const { data: session } = useLoad(getClientSession, []);
+  const { data: dicts } = useLoad(getDictionaries, []);
 
+  const [draftId, setDraftId] = useState(params.get('draft'));
   const [step, setStep] = useState(0);
-  const [company, setCompany] = useState(null);
-  const [lookupError, setLookupError] = useState(null);
   const [contact, setContact] = useState(null);
   const [terms, setTerms] = useState({
     productId: params.get('product') ?? 'working-capital',
     amount: params.get('amount') ?? '2000000',
     termMonths: Number(params.get('term')) || 24,
     purpose: params.get('purpose') ?? 'working_capital',
+    collateral: params.get('collateral') ?? 'none',
   });
   const [consents, setConsents] = useState({ bki: false, personalData: false });
   const [errors, setErrors] = useState({});
-  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const idempotencyKey = useRef(crypto.randomUUID());
 
-  // Клиент уже авторизован: реквизиты его компании подтягиваем по ИНН сразу
+  // Продолжение черновика: подставляем то, что уже сохранено на сервере
   useEffect(() => {
-    if (!session?.inn || company) return;
-    getCompany(session.inn)
-      .then((c) => { setCompany(c); setContact({ name: c.director, phone: c.phone, email: c.email }); })
-      .catch(() => setLookupError('Не удалось получить данные из ЕГРЮЛ — попробуйте позже'));
-  }, [session, company]);
+    const id = params.get('draft');
+    if (!id) return;
+    getApplication(id).then((app) => {
+      if (app.status !== 'draft') { navigate(`/applications/${app.id}`, { replace: true }); return; }
+      setTerms((t) => ({
+        productId: app.productId ?? t.productId,
+        amount: app.amount != null ? String(app.amount) : t.amount,
+        termMonths: app.termMonths ?? t.termMonths,
+        purpose: app.purpose ?? t.purpose,
+        collateral: app.collateral ?? t.collateral,
+      }));
+      if (app.contact) setContact(app.contact);
+    }).catch((err) => setFormError(err.message));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Контакты по умолчанию — из профиля компании
+  useEffect(() => {
+    if (company && !contact) setContact({ name: company.director, phone: company.phone, email: company.email });
+  }, [company, contact]);
 
   const product = products?.find((p) => p.id === terms.productId);
   const amount = Number(terms.amount) || 0;
   const termOptions = TERMS.filter((t) => !product || t <= product.maxTermMonths);
+  const payment = product && amount > 0 ? annuity(amount, product.rateFrom, terms.termMonths) : null;
 
   // Срок из помощника может быть больше, чем позволяет продукт — прижимаем к максимуму
   useEffect(() => {
     if (product && terms.termMonths > product.maxTermMonths) setTerms((t) => ({ ...t, termMonths: product.maxTermMonths }));
   }, [product, terms.termMonths]);
-  const payment = product && amount > 0 ? annuity(amount, product.rateFrom, terms.termMonths) : null;
 
-  const validate = () => {
+  const termsPayload = () => ({ ...terms, amount });
+
+  const validateLocal = () => {
     const e = {};
     if (step === 1) {
       if (!contact.name.trim()) e.name = 'Укажите контактное лицо';
       if (!/^\+?[\d\s()-]{10,}$/.test(contact.phone)) e.phone = 'Телефон в формате +7 900 000-00-00';
       if (!/^\S+@\S+\.\S+$/.test(contact.email)) e.email = 'Проверьте email';
     }
-    if (step === 2 && product) {
-      if (amount < product.minAmount || amount > product.maxAmount) {
-        e.amount = `От ${formatRub(product.minAmount)} до ${formatRub(product.maxAmount)} для этого продукта`;
-      }
+    if (step === 2 && product && (amount < product.minAmount || amount > product.maxAmount)) {
+      e.amount = `От ${formatRub(product.minAmount)} до ${formatRub(product.maxAmount)} для этого продукта`;
     }
     if (step === 3 && !(consents.bki && consents.personalData)) e.consents = 'Без согласий банк не сможет рассмотреть заявку';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  const next = () => { if (validate()) setStep(step + 1); };
+  // Ошибка сервера: поля → подсказки у полей, клиента возвращаем на шаг с первой ошибкой
+  const showServerError = (err) => {
+    const f = fieldErrors(err);
+    const mapped = {
+      amount: f.amount ?? f.termMonths ?? f.productId ?? f.purpose,
+      name: f.contact ?? f['contact.name'], phone: f['contact.phone'], email: f['contact.email'],
+      consents: f['consents.bki'] ?? f['consents.personalData'],
+    };
+    setErrors(Object.fromEntries(Object.entries(mapped).filter(([, v]) => v)));
+    setFormError(err.fields?.length ? null : err.message);
+    const back = Math.min(...Object.keys(f).map((k) => FIELD_STEP[k.split('.')[0]] ?? 99));
+    if (back < step) setStep(back);
+  };
+
+  const run = async (fn) => {
+    setBusy(true);
+    setFormError(null);
+    try { await fn(); } catch (err) { showServerError(err); } finally { setBusy(false); }
+  };
+
+  // Шаг 1: черновик создаётся сразу — дальше каждый шаг сохраняется на сервере
+  const confirmCompany = () => run(async () => {
+    if (!draftId) {
+      const draft = await createDraft({ ...termsPayload(), contact });
+      setDraftId(draft.id);
+      setParams((p) => { p.set('draft', draft.id); return p; }, { replace: true });
+    }
+    setStep(1);
+  });
+
+  const saveContact = () => validateLocal() && run(async () => { await updateDraft(draftId, { contact }); setStep(2); });
+  const saveTerms = () => validateLocal() && run(async () => { await updateDraft(draftId, termsPayload()); setStep(3); });
+  const submit = () => validateLocal() && run(async () => {
+    const app = await submitApplication(draftId, consents, idempotencyKey.current);
+    navigate(`/applications/${app.id}`);
+  });
 
   const setProduct = (productId) => {
     const p = products.find((x) => x.id === productId);
     setTerms((t) => ({ ...t, productId, termMonths: Math.min(t.termMonths, p.maxTermMonths) }));
   };
 
-  const submit = async () => {
-    if (!validate()) return;
-    setSubmitting(true);
-    const { id } = await createApplication({ productId: terms.productId, amount, termMonths: terms.termMonths, purpose: terms.purpose, contact });
-    navigate(`/applications/${id}`);
-  };
-
-  const purposeLabel = PURPOSES.find((p) => p.value === terms.purpose)?.label;
+  const purposes = dicts?.purposes ?? [];
+  const collaterals = dicts?.collateralTypes ?? [];
+  const labelOf = (list, code) => list.find((x) => x.code === code)?.label ?? code;
 
   return (
     <Page
       title="Заявка на кредит"
-      subtitle={`${product?.name ?? 'Кредит для бизнеса'} · шаг ${step + 1} из ${STEPS.length}. Реквизиты компании уже подтянули — осталось указать условия.`}
+      subtitle={`${product?.name ?? 'Кредит для бизнеса'} · шаг ${step + 1} из ${STEPS.length}.${draftId ? ` Черновик ${draftId} сохраняется автоматически.` : ' Реквизиты компании уже подтянули.'}`}
       extra={(
         <ol className="steps steps--dark">
           {STEPS.map((s, i) => (
@@ -118,29 +162,35 @@ export default function ApplicationWizard() {
     >
       <div className="columns">
         <Card className="stack">
+          {formError && <p className="m0 caveat"><span aria-hidden="true">! </span>{formError}</p>}
+
           {step === 0 && (
             <>
               <h2>Реквизиты компании</h2>
-              {!company && !lookupError && <p className="muted m0">Получаем данные из ЕГРЮЛ по ИНН {session?.inn}…</p>}
-              {lookupError && <p className="m0 caveat">{lookupError}</p>}
+              {companyError && <p className="m0 caveat">{companyError.message}</p>}
+              {!company && !companyError && <p className="muted m0">Получаем реквизиты компании…</p>}
               {company && (
                 <>
                   <div className="row">
                     <Badge tone="success">Данные получены</Badge>
-                    <span className="muted small">по данным {company.source} на {formatDate(company.fetchedAt)}</span>
+                    <span className="muted small">по данным {company.source ?? 'ФНС'} на {formatDate(company.fetchedAt)}</span>
                   </div>
                   <div className="fields-2">
                     <Field autofilled label="ИНН" value={company.inn} />
                     <Field autofilled label="Название" value={company.name} />
+                    <Field autofilled className="span-2" label="Полное наименование" value={company.fullName} />
                     <Field autofilled label={company.type === 'ip' ? 'ОГРНИП' : 'ОГРН'} value={company.ogrn} />
                     {company.kpp && <Field autofilled label="КПП" value={company.kpp} />}
                     <Field autofilled label="Дата регистрации" value={formatDate(company.registeredAt)} />
-                    <Field autofilled label={company.type === 'ip' ? 'Предприниматель' : 'Руководитель'} value={company.director} />
+                    <Field autofilled label={company.directorTitle ?? 'Руководитель'} value={company.director} />
                     <Field autofilled className="span-2" label="ОКВЭД" value={`${company.okved.code} — ${company.okved.title}`} />
                     <Field autofilled className="span-2" label="Юридический адрес" value={company.legalAddress} />
+                    {company.founders?.length > 0 && (
+                      <Field autofilled className="span-2" label="Учредители" value={company.founders.map((f) => `${f.name} — ${f.sharePercent}%`).join(', ')} />
+                    )}
                   </div>
                   <p className="muted small m0">Вы вошли как клиент банка, поэтому вводить ИНН и реквизиты не нужно.</p>
-                  <div className="row"><Button onClick={next}>Всё верно, дальше</Button></div>
+                  <div className="row"><Button disabled={busy} onClick={confirmCompany}>Всё верно, дальше</Button></div>
                 </>
               )}
             </>
@@ -157,7 +207,7 @@ export default function ApplicationWizard() {
               </div>
               <div className="row">
                 <Button variant="secondary" onClick={() => setStep(0)}>Назад</Button>
-                <Button onClick={next}>Далее</Button>
+                <Button disabled={busy} onClick={saveContact}>Далее</Button>
               </div>
             </>
           )}
@@ -192,8 +242,16 @@ export default function ApplicationWizard() {
               <div className="stack" style={{ gap: 'var(--space-3)' }}>
                 <div className="muted small">Цель</div>
                 <div className="chips">
-                  {PURPOSES.map((p) => (
-                    <button key={p.value} type="button" className="chip" aria-pressed={terms.purpose === p.value} onClick={() => setTerms({ ...terms, purpose: p.value })}>{p.label}</button>
+                  {purposes.map((p) => (
+                    <button key={p.code} type="button" className="chip" aria-pressed={terms.purpose === p.code} onClick={() => setTerms({ ...terms, purpose: p.code })}>{p.label}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="stack" style={{ gap: 'var(--space-3)' }}>
+                <div className="muted small">Залог</div>
+                <div className="chips">
+                  {collaterals.map((c) => (
+                    <button key={c.code} type="button" className="chip" aria-pressed={terms.collateral === c.code} onClick={() => setTerms({ ...terms, collateral: c.code })}>{c.label}</button>
                   ))}
                 </div>
               </div>
@@ -206,20 +264,21 @@ export default function ApplicationWizard() {
               )}
               <div className="row">
                 <Button variant="secondary" onClick={() => setStep(1)}>Назад</Button>
-                <Button onClick={next}>Далее</Button>
+                <Button disabled={busy} onClick={saveTerms}>Далее</Button>
               </div>
             </>
           )}
 
-          {step === 3 && company && (
+          {step === 3 && company && contact && (
             <>
               <h2>Проверьте и отправьте</h2>
               <dl className="kv-grid">
                 <div><dt>Компания</dt><dd>{company.name}</dd></div>
                 <div><dt>Продукт</dt><dd>{product?.name}</dd></div>
-                <div><dt>Цель</dt><dd>{purposeLabel}</dd></div>
+                <div><dt>Цель</dt><dd>{labelOf(purposes, terms.purpose)}</dd></div>
                 <div><dt>Сумма</dt><dd>{formatRub(amount)}</dd></div>
                 <div><dt>Срок</dt><dd>{formatMonths(terms.termMonths)}</dd></div>
+                <div><dt>Залог</dt><dd>{labelOf(collaterals, terms.collateral)}</dd></div>
                 <div><dt>Контакт</dt><dd>{contact.name}, {contact.phone}</dd></div>
               </dl>
               <div className="stack" style={{ gap: 'var(--space-3)' }}>
@@ -233,7 +292,7 @@ export default function ApplicationWizard() {
               </div>
               <div className="row">
                 <Button variant="secondary" onClick={() => setStep(2)}>Назад</Button>
-                <Button variant="accent" onClick={submit} disabled={submitting}>Отправить заявку</Button>
+                <Button variant="accent" onClick={submit} disabled={busy}>Отправить заявку</Button>
               </div>
             </>
           )}
@@ -246,12 +305,12 @@ export default function ApplicationWizard() {
               : 'Решение придёт в кабинет: вы увидите, какие показатели на него повлияли и как улучшить условия.'}
           </AiHint>
           <Card className="stack">
-            <h3>Что учитывает банк</h3>
+            <h3>Что проверит банк</h3>
             <ul className="m0">
-              <li>Выручку и её динамику за 12 месяцев</li>
-              <li>Платежи по текущим кредитам</li>
-              <li>Кредитную историю за 2 года</li>
-              <li>Срок работы бизнеса</li>
+              <li>Обороты по счёту в банке</li>
+              <li>Данные ЕГРЮЛ / ЕГРИП</li>
+              <li>ФНС «Прозрачный бизнес»</li>
+              <li>Кредитную историю в БКИ</li>
             </ul>
           </Card>
         </aside>

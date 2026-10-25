@@ -10,6 +10,8 @@ import { getApplication, requestSignCode, signContract } from '../../api/client.
 import { useLoad } from '../../api/useLoad.js';
 import { formatMonths, formatPercent, formatRub } from '../../lib/format.js';
 
+const formatTime = (iso) => new Date(iso).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+
 // Подписание договора простой ЭП с кодом подтверждения и моделируемая выдача.
 // Смоделировано внутри продукта (FAQ п. 12): без SMS и без интеграции с ДБО / Госключом.
 export default function SignContract() {
@@ -22,7 +24,7 @@ export default function SignContract() {
   const [codeError, setCodeError] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  if (error) return <Page title="Заявка не найдена" subtitle={`Проверьте номер: ${id}`} />;
+  if (error) return <Page title="Заявка не найдена" subtitle={error.message} />;
   if (!app) return <Page title="Подписание договора" subtitle="Загружаем договор…" />;
 
   if (app.status !== 'signing') {
@@ -36,21 +38,33 @@ export default function SignContract() {
   const o = app.offer;
   const s = app.signing;
 
+  const phone = app.contact?.phone ?? app.company.phone;
+
   const getCode = async () => {
     setBusy(true);
-    setSent(await requestSignCode(app.id));
     setCode('');
     setCodeError(null);
-    setBusy(false);
+    try {
+      setSent(await requestSignCode(app.id));
+    } catch (err) {
+      setCodeError(err.message);
+    } finally {
+      setBusy(false);
+    }
   };
+
+  // Код истёк или попытки кончились — нужен новый код
+  const NEED_NEW_CODE = ['code_expired', 'code_attempts_exceeded', 'code_not_requested'];
 
   const sign = async () => {
     setBusy(true);
     try {
       await signContract(app.id, code);
       navigate(`/applications/${app.id}`);
-    } catch {
-      setCodeError('Код не подходит — проверьте цифры или запросите новый');
+    } catch (err) {
+      setCodeError(err.message); // текст с бэка, например «Код не подходит. Осталось попыток: 2»
+      if (NEED_NEW_CODE.includes(err.code)) setSent(null);
+      else if (err.code === 'invalid_code') setSent({ ...sent, attemptsLeft: Math.max(0, sent.attemptsLeft - 1) });
       setBusy(false);
     }
   };
@@ -81,11 +95,18 @@ export default function SignContract() {
           </label>
 
           {!sent ? (
-            <div className="row"><Button disabled={!agree || busy} onClick={getCode}>Получить код для подписи</Button></div>
+            <>
+              {codeError && <p className="m0 caveat"><span aria-hidden="true">! </span>{codeError}</p>}
+              <div className="row"><Button disabled={!agree || busy} onClick={getCode}>Получить код для подписи</Button></div>
+            </>
           ) : (
             <>
               <p className="raised m0">
-                Демо: в рабочей версии код придёт в SMS на {app.contact.phone}. Ваш код — <b className="code">{sent.code}</b>
+                {sent.code
+                  ? <>Демо: в рабочей версии код придёт в SMS на {phone}. Ваш код — <b className="code">{sent.code}</b></>
+                  : <>Код отправлен на {phone}.</>}
+                <br />
+                <span className="small muted">Действует до {formatTime(sent.expiresAt)} · попыток: {sent.attemptsLeft}</span>
               </p>
               <div className="inn-row">
                 <Field

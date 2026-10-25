@@ -1,179 +1,108 @@
-// Единая точка доступа к данным. Сейчас ходит в демо-хранилище, при подключении бэка
-// меняется только этот файл: сигнатуры повторяют эндпоинты из «Контракт фронт ↔ бэк».
-import { isValidInn } from '../lib/inn.js';
-import { recommendProducts } from './assistantMock.js';
-import {
-  CHANGE_EVENT, COMPANIES, PRODUCTS, TEST_ACCOUNTS, applyDecision, completeSigning, issueSignCode,
-  makeApplication, readState, resetState, startSigning, writeState,
-} from './store.js';
+// Все обращения фронта к API — только здесь. Контракт: docs/api/openapi.json (Swagger: /api/docs).
+import { clearSession, readSession, request, saveSession } from './http.js';
 
-export class ApiError extends Error {
-  constructor(code) { super(code); this.code = code; }
-}
+export { ApiError, fieldErrors } from './http.js';
 
-const delay = (ms = 250) => new Promise((resolve) => setTimeout(resolve, ms));
-const clone = (x) => structuredClone(x);
-const now = () => new Date().toISOString();
+// ---------- Авторизация ----------
 
-function findApp(state, id) {
-  const app = state.applications[id];
-  if (!app) throw new ApiError('application_not_found');
-  return app;
-}
+// Пользователь текущей вкладки: { accountId, role, name, inn? } или null
+export const currentSession = () => readSession()?.user ?? null;
 
-function saveApp(state, app) {
-  writeState({ ...state, applications: { ...state.applications, [app.id]: app } });
-  return clone(app);
-}
+export const getTestAccounts = () => request('GET', '/auth/test-accounts');
 
-// ---------- Вход по тестовым учётным записям ----------
-// Сессия в sessionStorage — своя у каждой вкладки: клиент и аналитик работают рядом.
-// В промышленной версии — вход через Альфа-ID / ДБО (действующий клиент банка).
-const SESSION_KEY = 'alfa-cabinet-session';
-
-export function currentSession() {
-  try { return JSON.parse(sessionStorage.getItem(SESSION_KEY)); } catch { return null; }
-}
-
-// GET /api/auth/test-accounts
-export async function getTestAccounts() {
-  return TEST_ACCOUNTS.map((a) => ({ ...a, name: a.role === 'client' ? COMPANIES[a.inn].name : a.name }));
-}
-
-// POST /api/auth/login
 export async function login(accountId) {
-  await delay(200);
-  const acc = TEST_ACCOUNTS.find((a) => a.id === accountId);
-  if (!acc) throw new ApiError('account_not_found');
-  const session = acc.role === 'client'
-    ? { role: 'client', accountId, inn: acc.inn, name: COMPANIES[acc.inn].name }
-    : { role: 'analyst', accountId, name: acc.name };
-  try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(session)); } catch { /* без хранилища — вход до перезагрузки не держится */ }
-  window.dispatchEvent(new Event(CHANGE_EVENT));
-  return session;
+  const res = await request('POST', '/auth/login', { body: { accountId } });
+  saveSession({ accessToken: res.accessToken, user: res.user, expiresAt: Date.now() + res.expiresIn * 1000 });
+  return res.user;
 }
 
-// POST /api/auth/logout
 export async function logout() {
-  try { sessionStorage.removeItem(SESSION_KEY); } catch { /* нечего чистить */ }
-  window.dispatchEvent(new Event(CHANGE_EVENT));
+  try { await request('POST', '/auth/logout'); } catch { /* токен мог уже истечь — выходим всё равно */ }
+  clearSession();
 }
 
-// Клиент текущей сессии: компания и его заявка — для шапки и ссылки «Моя заявка»
-export async function getClientSession() {
-  const session = currentSession();
-  if (session?.role !== 'client') return null;
-  return { ...session, company: clone(COMPANIES[session.inn]), applicationId: readState().currentByInn[session.inn] ?? null };
+// { user, company, currentApplicationId }
+export const getMe = () => request('GET', '/me');
+export const getMyCompany = () => request('GET', '/me/company');
+
+// ---------- Каталог и справочники ----------
+
+export const getProducts = () => request('GET', '/products');
+export const recommend = (input) => request('POST', '/assistant/recommend', { body: input });
+
+// ВРЕМЕННО: копия справочников из backend/app/api/routes/catalog.py. GET /api/dictionaries
+// сейчас отвечает 500 (в роуте поле purposes, в схеме purpose). Убрать после исправления на бэке.
+const DICTIONARIES_FALLBACK = {
+  purposes: [
+    { code: 'working_capital', label: 'Пополнение оборотных средств' },
+    { code: 'cash_gap', label: 'Кассовый разрыв' },
+    { code: 'equipment', label: 'Покупка оборудования' },
+    { code: 'renovation', label: 'Ремонт и развитие' },
+    { code: 'refinancing', label: 'Рефинансирование' },
+  ],
+  collateralTypes: [
+    { code: 'real_estate', label: 'Недвижимость' },
+    { code: 'equipment', label: 'Оборудование' },
+    { code: 'none', label: 'Без залога' },
+  ],
+  rejectReasons: [
+    { code: 'debt_load', label: 'Высокая долговая нагрузка' },
+    { code: 'credit_history', label: 'Негативная кредитная история' },
+    { code: 'company_inactive', label: 'Компания не действует' },
+    { code: 'insufficient_data', label: 'Недостаточно данных для оценки' },
+    { code: 'risk_signals', label: 'Признаки повышенного риска' },
+    { code: 'other', label: 'Другая причина' },
+  ],
+  infoItems: [
+    { code: 'monthly_revenue_confirm', label: 'Среднемесячная выручка за 6 месяцев, ₽', type: 'number', required: true },
+    { code: 'main_bank', label: 'Банк, где ведутся основные обороты', type: 'text', required: true },
+    { code: 'purpose_details', label: 'Подробнее о цели кредита', type: 'text', required: true },
+    { code: 'actual_address', label: 'Фактический адрес ведения бизнеса', type: 'text', required: true },
+  ],
+};
+
+// Справочники не меняются за сессию — запрашиваем один раз на вкладку
+let dictionaries;
+export function getDictionaries() {
+  dictionaries ??= request('GET', '/dictionaries')
+    .then((d) => ({ ...d, purposes: d.purposes ?? d.purpose }))
+    .catch((err) => {
+      console.warn('GET /api/dictionaries недоступен, используем локальную копию справочников', err);
+      return DICTIONARIES_FALLBACK;
+    });
+  return dictionaries;
 }
 
-// ---------- Клиент ----------
+// ---------- Заявки клиента ----------
 
-// GET /api/companies/{inn}
-export async function getCompany(inn) {
-  await delay(600);
-  if (!isValidInn(inn)) throw new ApiError('invalid_inn');
-  const company = COMPANIES[inn];
-  if (!company) throw new ApiError('company_not_found');
-  if (company.status !== 'active') throw new ApiError('company_inactive');
-  return clone(company);
-}
+export const listMyApplications = () => request('GET', '/applications');
+export const getApplication = (id) => request('GET', `/applications/${id}`);
 
-// GET /api/products
-export async function getProducts() {
-  await delay();
-  return clone(PRODUCTS);
-}
+// Черновик: создаётся сразу, сохраняется по шагам, отправляется с согласиями
+export const createDraft = (data) => request('POST', '/applications', { body: data });
+export const updateDraft = (id, data) => request('PATCH', `/applications/${id}`, { body: data });
+export const submitApplication = (id, consents, idempotencyKey) =>
+  request('POST', `/applications/${id}/submit`, { body: { consents }, headers: { 'Idempotency-Key': idempotencyKey } });
 
-// POST /api/assistant/recommend — { purpose, amount, termMonths, collateral } → { summary, items[] }
-export async function recommend(input) {
-  await delay(700);
-  return clone(recommendProducts(input));
-}
+// Ответ на запрос дополнительной информации: answers = [{code, value}]
+export const respondInfo = (id, answers, comment) =>
+  request('POST', `/applications/${id}/info`, { body: { answers, comment: comment || null } });
 
-// POST /api/applications — заявка от компании текущей сессии
-export async function createApplication({ productId, amount, termMonths, purpose, contact }) {
-  await delay();
-  const session = currentSession();
-  if (session?.role !== 'client') throw new ApiError('unauthorized');
-  const state = readState();
-  const id = `A-${state.nextNumber}`;
-  const at = now();
-  const app = makeApplication({
-    id, inn: session.inn, productId, amount, termMonths, purpose, contact,
-    history: [{ status: 'submitted', at, actor: 'client' }, { status: 'scoring', at, actor: 'system', note: 'Проверяем выписку и данные ФНС' }],
-  });
-  writeState({
-    ...state, nextNumber: state.nextNumber + 1,
-    currentByInn: { ...state.currentByInn, [session.inn]: id },
-    applications: { ...state.applications, [id]: app },
-  });
-  return { id };
-}
+export const acceptOffer = (id) => request('POST', `/applications/${id}/offer/accept`);
+export const declineOffer = (id) => request('POST', `/applications/${id}/offer/decline`);
 
-// GET /api/applications/{id} (для демо сразу с решением, факторами и оффером)
-export async function getApplication(id) {
-  await delay();
-  return clone(findApp(readState(), id));
-}
-
-// POST /api/applications/{id}/offer/accept — договор сформирован, ждёт подписи
-export async function acceptOffer(id) {
-  await delay();
-  const state = readState();
-  const app = findApp(state, id);
-  if (!app.offer || !['approved', 'counter_offer'].includes(app.status)) throw new ApiError('no_offer');
-  return saveApp(state, startSigning(app, now()));
-}
-
-// POST /api/applications/{id}/offer/decline
-export async function declineOffer(id) {
-  await delay();
-  const state = readState();
-  const app = findApp(state, id);
-  if (!app.offer) throw new ApiError('no_offer');
-  const status = 'declined_by_client';
-  return saveApp(state, { ...app, status, history: [...app.history, { status, at: now(), actor: 'client' }] });
-}
-
-// POST /api/applications/{id}/sign/code — в демо код возвращается в ответе и показывается в интерфейсе.
-// В промышленной версии — SMS / push в приложении банка.
-export async function requestSignCode(id) {
-  await delay(500);
-  const state = readState();
-  const app = findApp(state, id);
-  if (app.status !== 'signing') throw new ApiError('not_signing');
-  const next = issueSignCode(app, now());
-  saveApp(state, next);
-  return { code: next.signing.code, sentAt: next.signing.codeSentAt };
-}
-
-// POST /api/applications/{id}/sign — подписание простой ЭП и моделируемая выдача
-export async function signContract(id, code) {
-  await delay(700);
-  const state = readState();
-  const app = findApp(state, id);
-  if (app.status !== 'signing') throw new ApiError('not_signing');
-  if (!app.signing.code || code !== app.signing.code) throw new ApiError('invalid_code');
-  return saveApp(state, completeSigning(app, now()));
-}
+// { sentAt, expiresAt, attemptsLeft, code? } — code приходит только в демо-режиме (DEMO_SHOW_SIGN_CODE)
+export const requestSignCode = (id) => request('POST', `/applications/${id}/sign/code`);
+export const signContract = (id, code) => request('POST', `/applications/${id}/sign`, { body: { code } });
 
 // ---------- Аналитик ----------
 
-// GET /api/analyst/applications
-export async function listApplications() {
-  await delay();
-  return Object.values(readState().applications)
-    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
-    .map(clone);
-}
+export const listApplications = (status) =>
+  request('GET', `/analyst/applications${status ? `?status=${encodeURIComponent(status)}` : ''}`);
+export const getAnalystApplication = (id) => request('GET', `/analyst/applications/${id}`);
+// { action, amount?, commentForClient?, reasonCode?, infoItems? }
+export const decide = (id, body) => request('POST', `/analyst/applications/${id}/decision`, { body });
 
-// POST /api/analyst/applications/{id}/decision
-export async function decide(id, input) {
-  await delay();
-  const state = readState();
-  return saveApp(state, applyDecision(findApp(state, id), input, now()));
-}
+// ---------- Демо ----------
 
-export async function resetDemo() {
-  resetState();
-}
+export const resetDemo = () => request('POST', '/demo/reset');

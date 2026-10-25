@@ -17,8 +17,9 @@ export default function Offer() {
   const navigate = useNavigate();
   const { data: app, error } = useLoad(() => getApplication(id), [id]);
   const [busy, setBusy] = useState(false);
+  const [actionError, setActionError] = useState(null);
 
-  if (error) return <Page title="Заявка не найдена" subtitle={`Проверьте номер: ${id}`} />;
+  if (error) return <Page title="Заявка не найдена" subtitle={error.message} />;
   if (!app) return <Page title="Предложение банка" subtitle="Загружаем предложение…" />;
 
   const o = app.offer;
@@ -34,8 +35,14 @@ export default function Offer() {
   const expired = Date.parse(o.validUntil) < Date.now();
   const respond = async (fn, to) => {
     setBusy(true);
-    await fn(app.id);
-    navigate(to);
+    setActionError(null);
+    try {
+      await fn(app.id);
+      navigate(to);
+    } catch (err) {
+      setActionError(err.message); // например, offer_expired — срок предложения истёк
+      setBusy(false);
+    }
   };
   const rb = o.rateBreakdown;
 
@@ -97,6 +104,7 @@ export default function Offer() {
             </div>
           )}
           {expired && !responded && <p className="muted small m0">Срок действия предложения истёк.</p>}
+          {actionError && <p className="m0 caveat"><span aria-hidden="true">! </span>{actionError}</p>}
         </Card>
 
         <aside className="stack">

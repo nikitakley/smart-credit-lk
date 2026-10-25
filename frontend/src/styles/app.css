@@ -313,6 +313,12 @@ a.btn { display: inline-flex; align-items: center; justify-content: center; text
   .queue-row { grid-template-columns: auto minmax(0, 1fr) auto; }
   .queue-row__fact, .queue-row__arrow { display: none; }
 }
+/* Заявки клиента: без аватара, стрелка с подписью «Продолжить →» у черновиков */
+.queue-row--client { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 0.8fr) 200px 120px; }
+.queue-row--client .queue-row__arrow { justify-self: end; font-size: var(--fs-body); }
+@media (max-width: 860px) {
+  .queue-row--client { grid-template-columns: minmax(0, 1fr) auto; }
+}
 
 /* ---------- Карточка аналитика ---------- */
 .kv-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-5); margin: 0; }
@@ -323,6 +329,17 @@ a.btn { display: inline-flex; align-items: center; justify-content: center; text
 .events { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-3); }
 .events li { display: grid; grid-template-columns: 140px 1fr; gap: var(--space-4); }
 .score { font-weight: var(--fw-bold); }
+
+/* Проверки банка (checks[]): название и вывод слева, статус справа */
+.checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.check-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-3) 0; }
+.check-row + .check-row { border-top: 1px solid var(--border); }
+.check-row__text { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
+.check-row .badge { flex: none; }
+
+/* Группа полей формы решения — без рамки fieldset */
+fieldset.stack-sm { border: 0; margin: 0; padding: 0; min-width: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+fieldset.stack-sm legend { padding: 0; margin-bottom: var(--space-2); }
 
 /* ---------- Помощник подбора ---------- */
 /* Прогресс анкеты — фирменный фундамент */

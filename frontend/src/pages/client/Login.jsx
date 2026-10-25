@@ -9,14 +9,21 @@ import { useLoad } from '../../api/useLoad.js';
 // Вход по тестовым учётным записям. Клиенты — действующие клиенты банка, регистрации нет (FAQ п. 3).
 // В промышленной версии — вход через Альфа-ID / ДБО, кабинет открывается уже авторизованным.
 export default function Login() {
-  const { data: accounts } = useLoad(getTestAccounts, []);
+  const { data: accounts, error } = useLoad(getTestAccounts, []);
   const [busy, setBusy] = useState(null);
+  const [loginError, setLoginError] = useState(null);
   const navigate = useNavigate();
 
   const enter = async (acc) => {
     setBusy(acc.id);
-    const session = await login(acc.id);
-    navigate(session.role === 'analyst' ? '/analyst' : '/assistant', { replace: true });
+    setLoginError(null);
+    try {
+      const user = await login(acc.id);
+      navigate(user.role === 'analyst' ? '/analyst' : '/assistant', { replace: true });
+    } catch (err) {
+      setLoginError(err.message);
+      setBusy(null);
+    }
   };
 
   return (
@@ -32,6 +39,8 @@ export default function Login() {
         <Card className="stack auth__card">
           <h2>Вход</h2>
           <p className="muted m0">Выберите тестовую учётную запись. Клиенты — действующие клиенты банка.</p>
+          {(error || loginError) && <p className="m0 caveat"><span aria-hidden="true">! </span>{loginError ?? error.message}</p>}
+          {!accounts && !error && <p className="muted small m0">Загружаем учётные записи…</p>}
           <div className="accounts">
             {(accounts ?? []).map((a) => (
               <button key={a.id} type="button" className="account" disabled={!!busy} onClick={() => enter(a)}>
