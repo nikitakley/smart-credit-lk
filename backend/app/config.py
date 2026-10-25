@@ -32,8 +32,12 @@ class Settings(BaseSettings):
     # CORS - нужен при запуске фронтенда без прокси
     cors_origins: list[str] = ["http://localhost:5173"]
 
-    # База данных 
-    database_url: str = "postgresql+psyopg://credit:credit@localhost:5432/credit"
+    # База данных
+    database_url: str = "postgresql+psycopg://credit:credit@localhost:5432/credit"
+    db_pool_size: int = 5
+    db_max_overflow: int = 10
+    db_connect_timeout_seconds: int = 3
+    db_echo: bool = False  # печатать SQL-запросы в лог (для отладки)
 
 
 @lru_cache
