@@ -1,8 +1,12 @@
 """"Конфигурация приложения из переменных окружения."""
 
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Корень репозитория: backend/app/config.py → parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 class Settings(BaseSettings):
@@ -38,6 +42,9 @@ class Settings(BaseSettings):
     db_max_overflow: int = 10
     db_connect_timeout_seconds: int = 3
     db_echo: bool = False  # печатать SQL-запросы в лог (для отладки)
+
+    # Сиды: папка с JSON-файлами начальных и демо-данных
+    seed_dir: Path = REPO_ROOT / "data" / "seed"
 
 
 @lru_cache
