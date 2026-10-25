@@ -1,0 +1,29 @@
+[
+  {
+    "id": "working-capital",
+    "name": "Оборотный кредит",
+    "note": "Пополнение оборотных средств",
+    "minAmount": 300000,
+    "maxAmount": 10000000,
+    "maxTermMonths": 36,
+    "spread": 4.5
+  },
+  {
+    "id": "investment",
+    "name": "Кредит на развитие",
+    "note": "Оборудование, ремонт, развитие бизнеса",
+    "minAmount": 1000000,
+    "maxAmount": 30000000,
+    "maxTermMonths": 60,
+    "spread": 3.9
+  },
+  {
+    "id": "overdraft",
+    "name": "Овердрафт",
+    "note": "Кассовые разрывы, деньги доступны сразу",
+    "minAmount": 100000,
+    "maxAmount": 5000000,
+    "maxTermMonths": 12,
+    "spread": 5.5
+  }
+]
