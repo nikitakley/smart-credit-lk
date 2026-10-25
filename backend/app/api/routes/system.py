@@ -3,8 +3,8 @@ from fastapi import APIRouter, Response, status
 from app.config import get_settings
 from app.schemas.base import CamelModel
 from app.errors import ApiError, error_responses
-from app.stubs import store
-from app.db.session import check_database
+from app.db.seed import reset_demo_applications, seed_reference_data
+from app.db.session import DbSession, check_database
 
 router = APIRouter(tags=["Служебное"])
 
@@ -37,9 +37,13 @@ def health(response: Response) -> Health:
     "/demo/reset",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Сбросить демо-данные (только в демо-режиме)",
+    description="Удаляет все заявки и заново загружает справочники и демо-заявки из data/seed.",
     responses=error_responses(404),
 )
-def demo_reset() -> None:
-    if not get_settings().demo_mode:
+def demo_reset(db: DbSession) -> None:
+    settings = get_settings()
+    if not settings.demo_mode:
         raise ApiError(404, "not_found", "Демо-режим выключен")
-    store.state.reset()
+    seed_reference_data(db, settings.seed_dir)
+    reset_demo_applications(db, settings.seed_dir)
+    db.commit()
