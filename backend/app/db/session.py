@@ -27,7 +27,7 @@ engine = create_engine(
 )
 
 # Фабрика сессий
-SessionLocal = sessionmaker(bind=engine, autoflash=False, expire_on_commit=False)
+SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 
 def get_db() -> Iterator[Session]:
