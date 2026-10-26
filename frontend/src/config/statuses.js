@@ -25,6 +25,8 @@ export const ACTORS = { client: 'клиент', system: 'система', analys
 export const IN_PROGRESS = ['submitted', 'validation', 'enrichment', 'scoring'];
 // Решение аналитика бэкенд принимает только в этих статусах
 export const ANALYST_DECIDES = ['manual_review', 'docs_requested'];
+// Повторный запрос данных из источников бэкенд разрешает только в этих статусах (иначе 409)
+export const CHECKS_REFRESH = ['enrichment', 'scoring', 'manual_review', 'docs_requested'];
 
 // Основной путь заявки: по нему таймлайн показывает ещё не пройденные шаги
 export const FLOW = ['submitted', 'validation', 'enrichment', 'scoring', 'approved', 'signing', 'issued'];

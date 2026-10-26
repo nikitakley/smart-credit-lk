@@ -6,7 +6,8 @@ import { CHANGE_EVENT } from './http.js';
  * — после любого изменяющего запроса в этой вкладке (событие CHANGE_EVENT);
  * — по таймеру, если передан pollMs: так клиент видит решение аналитика из соседней вкладки.
  * При ошибке повторной загрузки уже показанные данные не пропадают.
- * const { data, error, loading } = useLoad(() => getApplication(id), [id], { pollMs: 10000 });
+ * mutate(data) — подставить данные из ответа действия (например, обновлённую карточку), не дожидаясь перезапроса.
+ * const { data, error, loading, mutate } = useLoad(() => getApplication(id), [id], { pollMs: 10000 });
  */
 export function useLoad(load, deps, { pollMs } = {}) {
   const [state, setState] = useState({ data: null, error: null, loading: true });
@@ -29,5 +30,6 @@ export function useLoad(load, deps, { pollMs } = {}) {
     };
   }, [run, pollMs]);
 
-  return state;
+  const mutate = useCallback((data) => setState({ data, error: null, loading: false }), []);
+  return { ...state, mutate };
 }

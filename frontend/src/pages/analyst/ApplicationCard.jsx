@@ -10,9 +10,9 @@ import Field from '../../components/Field.jsx';
 import LoadError from '../../components/LoadError.jsx';
 import Page from '../../components/Page.jsx';
 import RingGauge from '../../components/art/RingGauge.jsx';
-import { decide, fieldErrors, getAnalystApplication, getDictionaries } from '../../api/client.js';
+import { decide, fieldErrors, getAnalystApplication, getDictionaries, refreshChecks } from '../../api/client.js';
 import { useLoad } from '../../api/useLoad.js';
-import { ACTORS, ANALYST_DECIDES, STATUS } from '../../config/statuses.js';
+import { ACTORS, ANALYST_DECIDES, CHECKS_REFRESH, STATUS } from '../../config/statuses.js';
 import { decisionHeadline } from '../../lib/decision.js';
 import { formatAge, formatDate, formatDateTime, formatPercent, formatRub } from '../../lib/format.js';
 
@@ -143,9 +143,47 @@ function DecisionForm({ app, dicts }) {
   );
 }
 
+// Проверки по источникам и повторный запрос данных. Запрос идёт 1–1,5 с, при зависшем источнике — до ~10 с
+function ChecksCard({ app, dicts, onRefreshed }) {
+  const [busy, setBusy] = useState(false);
+  const [refreshError, setRefreshError] = useState(null);
+  const canRefresh = CHECKS_REFRESH.includes(app.status);
+  if (!app.checks?.length && !canRefresh) return null;
+
+  const refresh = async () => {
+    setBusy(true);
+    setRefreshError(null);
+    try {
+      onRefreshed(await refreshChecks(app.id));
+    } catch (err) {
+      setRefreshError(err.message); // 409 — карточка перечитается сама
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card className="stack">
+      <div className="toolbar">
+        <h2>Проверки</h2>
+        {canRefresh && (
+          <Button variant="secondary" size="s" disabled={busy} aria-busy={busy} onClick={refresh}>
+            {busy ? 'Запрашиваем источники…' : 'Обновить данные из источников'}
+          </Button>
+        )}
+      </div>
+      {busy && <p className="muted small m0" role="status">Запрашиваем ЕГРЮЛ, НБКИ и «Прозрачный бизнес». Если источник не отвечает, это может занять до 10 секунд.</p>}
+      {refreshError && <p className="m0 caveat">{refreshError}</p>}
+      {app.checks?.length > 0
+        ? <ChecksList checks={app.checks} withDetails unavailableReasons={dicts?.unavailableReasons} />
+        : <p className="muted m0">Данные из источников ещё не запрашивались.</p>}
+    </Card>
+  );
+}
+
 export default function ApplicationCard() {
   const { id } = useParams();
-  const { data: app, error } = useLoad(() => getAnalystApplication(id), [id], { pollMs: 15000 });
+  const { data: app, error, mutate } = useLoad(() => getAnalystApplication(id), [id], { pollMs: 15000 });
   const { data: dicts } = useLoad(getDictionaries, []);
 
   const back = <Link to="/analyst" className="hero__back">← Очередь заявок</Link>;
@@ -184,12 +222,7 @@ export default function ApplicationCard() {
             </dl>
           </Card>
 
-          {app.checks?.length > 0 && (
-            <Card className="stack">
-              <h2>Проверки</h2>
-              <ChecksList checks={app.checks} withDetails unavailableReasons={dicts?.unavailableReasons} />
-            </Card>
-          )}
+          <ChecksCard app={app} dicts={dicts} onRefreshed={mutate} />
 
           <Card className="stack">
             <div className="toolbar">
