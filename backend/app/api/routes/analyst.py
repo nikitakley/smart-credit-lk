@@ -4,11 +4,13 @@ from fastapi import APIRouter, Query
 
 from app.db.session import DbSession
 from app.errors import error_responses
+from app.integrations.http import IntegrationClient
 from app.schemas.actions import AnalystDecisionRequest
 from app.schemas.application import AnalystQueueItem, ApplicationAnalyst
 from app.schemas.enums import ApplicationStatus
 from app.security import AnalystUser
 from app.services import analyst as service
+from app.services import enrichment
 from app.services.mappers import application_to_analyst, application_to_queue_item
 
 router = APIRouter(prefix="/analyst/applications", tags=["Сотрудник банка"])
@@ -53,3 +55,18 @@ def decide(
     application_id: str, body: AnalystDecisionRequest, user: AnalystUser, db: DbSession
 ) -> ApplicationAnalyst:
     return application_to_analyst(service.decide(db, user, application_id, body))
+
+
+@router.post(
+    "/{application_id}/checks/refresh",
+    response_model=ApplicationAnalyst,
+    summary="Повторно запросить данные из источников",
+    description="Запрашивает ЕГРЮЛ/ЕГРИП, НБКИ и «Прозрачный бизнес» и обновляет проверки заявки. "
+    "Статус заявки не меняется. Доступно в статусах enrichment, scoring, manual_review, docs_requested. "
+    "Если источник не ответил, проверка получает статус unavailable — остальные данные всё равно сохраняются.",
+    responses=error_responses(401, 403, 404, 409),
+)
+def refresh_checks(
+    application_id: str, _: AnalystUser, db: DbSession, client: IntegrationClient
+) -> ApplicationAnalyst:
+    return application_to_analyst(enrichment.refresh_checks(db, application_id, client))

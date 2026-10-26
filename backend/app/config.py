@@ -1,4 +1,4 @@
-""""Конфигурация приложения из переменных окружения."""
+"""Конфигурация приложения из переменных окружения (см. .env.example в корне репозитория)."""
 
 from functools import lru_cache
 from pathlib import Path
@@ -45,6 +45,17 @@ class Settings(BaseSettings):
 
     # Сиды: папка с JSON-файлами начальных и демо-данных
     seed_dir: Path = REPO_ROOT / "data" / "seed"
+
+    # Внешние источники (локально и в Docker — симулятор mocks). У каждого источника свой адрес:
+    # переход на настоящий сервис — смена адреса и ключа, без изменений в коде.
+    egr_base_url: str = "http://localhost:8001/egr"
+    nbki_base_url: str = "http://localhost:8001/nbki"
+    pb_base_url: str = "http://localhost:8001/pb"
+    integration_api_key: str = "local-mocks-key"
+    # Ожидание ответа одной попытки, число повторов и пауза перед первым повтором (дальше — вдвое больше)
+    integration_timeout_seconds: float = 3.0
+    integration_retries: int = 2
+    integration_backoff_seconds: float = 0.5
 
 
 @lru_cache

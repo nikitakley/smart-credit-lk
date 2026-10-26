@@ -14,7 +14,7 @@ import os
 
 from sqlalchemy.engine import make_url
 
-# Адрес тестовой базы выставляем до импорта приложения: движок SQLAlchemy создаётся
+# Адрес тестовой базы выставляем ДО импорта приложения: движок SQLAlchemy создаётся
 # при импорте app.db.session и берёт адрес из настроек (переменная DATABASE_URL).
 TEST_DATABASE_URL = os.environ.get(
     "TEST_DATABASE_URL", "postgresql+psycopg://credit:credit@localhost:5432/credit_test"
@@ -22,18 +22,26 @@ TEST_DATABASE_URL = os.environ.get(
 _test_url = make_url(TEST_DATABASE_URL)
 if not (_test_url.database or "").endswith("_test"):
     # Тесты удаляют все заявки — защита от случайного запуска на рабочей базе.
+    # render_as_string() скрывает пароль звёздочками.
     raise RuntimeError(f"Имя тестовой базы должно оканчиваться на _test: {_test_url.render_as_string()}")
 os.environ["DATABASE_URL"] = TEST_DATABASE_URL
 os.environ["DEMO_MODE"] = "true"
 os.environ["DEMO_SHOW_SIGN_CODE"] = "true"
+# Интеграции: без пауз между повторами; симулятор — без задержек и с тем же ключом, что у бэкенда
+os.environ["INTEGRATION_BACKOFF_SECONDS"] = "0"
+os.environ["INTEGRATION_API_KEY"] = os.environ["MOCKS_API_KEY"] = "test-mocks-key"
+os.environ["MOCK_LATENCY_MIN_MS"] = os.environ["MOCK_LATENCY_MAX_MS"] = "0"
+os.environ["MOCK_FAILURE_RATE"] = "0"
 
-# Импорты приложения только после настройки окружения выше
+# Импорты приложения — только после настройки окружения выше
+import sys
 from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
 from alembic import command
 from alembic.config import Config
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import OperationalError
@@ -45,6 +53,7 @@ from app.db.session import SessionLocal, engine
 from app.main import app
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
+MOCKS_DIR = BACKEND_DIR.parent / "mocks"
 
 
 def alembic_config() -> Config:
@@ -55,7 +64,7 @@ def alembic_config() -> Config:
 
 def create_database_if_missing() -> None:
     url = make_url(TEST_DATABASE_URL)
-    # Подключаемся к служебной базе postgres.
+    # Создать базу, будучи подключённым к ней же, нельзя — подключаемся к служебной базе postgres.
     # CREATE DATABASE не выполняется внутри транзакции, поэтому режим AUTOCOMMIT.
     admin_engine = create_engine(url.set(database="postgres"), isolation_level="AUTOCOMMIT")
     try:
@@ -125,3 +134,26 @@ def prodmarket(client: TestClient) -> dict[str, str]:
 @pytest.fixture
 def analyst(client: TestClient) -> dict[str, str]:
     return login(client, "analyst")
+
+
+@pytest.fixture(scope="session")
+def simulator_app() -> FastAPI:
+    """Код симулятора из папки mocks/ — тот же, что работает в контейнере mocks.
+
+    Тесты бэкенда проверяют адаптеры против настоящего симулятора, а не против придуманных ответов:
+    если формат ответа симулятора изменится, тесты бэкенда это заметят.
+    """
+    sys.path.insert(0, str(MOCKS_DIR))
+    from simulator.main import app as simulator
+
+    return simulator
+
+
+@pytest.fixture
+def simulator(simulator_app: FastAPI) -> Iterator[TestClient]:
+    """HTTP-клиент к симулятору без сети. Подходит адаптерам вместо обычного клиента: это тот же httpx.Client."""
+    from simulator.faults import get_faults
+
+    get_faults().reset()  # поведение источников — в памяти: сбрасываем между тестами
+    with TestClient(simulator_app, headers={"X-Api-Key": get_settings().integration_api_key}) as test_client:
+        yield test_client

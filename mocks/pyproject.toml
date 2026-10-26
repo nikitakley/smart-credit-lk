@@ -1,0 +1,23 @@
+[project]
+name = "smart-credit-mocks"
+version = "0.1.0"
+description = "Симулятор внешних источников: ЕГРЮЛ/ЕГРИП, НБКИ, ФНС «Прозрачный бизнес»"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi>=0.161.1",
+    "pydantic-settings>=2.16.1",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.16.0",
+    "pytest>=9.1.1",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

@@ -68,7 +68,7 @@
       {"source": "bank", "status": "ok", "summary": "Выручка за 12 месяцев выросла на 25%"},
       {"source": "egrul", "status": "ok", "summary": "Компания действует"},
       {"source": "pb", "status": "ok", "summary": "Признаков риска не выявлено"},
-      {"source": "nbki", "status": "ok", "summary": "Просрочек за 24 месяца нет"}
+      {"source": "nbki", "status": "ok", "summary": "Просрочек нет, платежи по кредитам — 750 000 ₽ в месяц"}
     ],
     "scoring": {
       "score": 880,
@@ -215,7 +215,7 @@
       {"source": "bank", "status": "ok", "summary": "Обороты по счёту стабильны"},
       {"source": "egrul", "status": "ok", "summary": "Компания действует"},
       {"source": "pb", "status": "warning", "summary": "Адрес регистрации указан у 54 компаний (массовый адрес)"},
-      {"source": "nbki", "status": "ok", "summary": "Просрочек за 24 месяца нет"}
+      {"source": "nbki", "status": "ok", "summary": "Просрочек нет, платежи по кредитам — 860 000 ₽ в месяц"}
     ],
     "scoring": {
       "score": 540,
@@ -253,7 +253,7 @@
       {"status": "enrichment", "actor": "system", "afterSeconds": 10, "note": "Запрашиваем данные в БКИ, ЕГРЮЛ и «Прозрачном бизнесе»"}
     ],
     "checks": [
-      {"source": "bank", "status": "ok", "summary": "Обороты по счёту стабильны"},
+      {"source": "bank", "status": "ok", "summary": "Выручка за 12 месяцев выросла на 25%"},
       {"source": "egrul", "status": "ok", "summary": "Компания действует"}
     ]
   }

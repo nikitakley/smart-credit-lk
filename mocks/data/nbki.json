@@ -1,0 +1,174 @@
+[
+  {
+    "inn": "1655482318",
+    "score": 688,
+    "history_length_months": 26,
+    "inquiries_30d": 3,
+    "payment_discipline_24m": {
+      "overdue_1_29": 0,
+      "overdue_30_59": 0,
+      "overdue_60_89": 0,
+      "overdue_90_plus": 0
+    },
+    "loans": [
+      {
+        "type": "credit_line",
+        "creditor_type": "bank",
+        "opened_at": "2024-09-02",
+        "limit": 6000000,
+        "balance": 4200000,
+        "monthly_payment": 420000,
+        "status": "active"
+      },
+      {
+        "type": "loan",
+        "creditor_type": "bank",
+        "opened_at": "2025-03-18",
+        "limit": 5000000,
+        "balance": 3100000,
+        "monthly_payment": 300000,
+        "status": "active"
+      }
+    ]
+  },
+  {
+    "inn": "7810624578",
+    "score": 781,
+    "history_length_months": 84,
+    "inquiries_30d": 1,
+    "payment_discipline_24m": {
+      "overdue_1_29": 0,
+      "overdue_30_59": 0,
+      "overdue_60_89": 0,
+      "overdue_90_plus": 0
+    },
+    "loans": [
+      {
+        "type": "loan",
+        "creditor_type": "bank",
+        "opened_at": "2023-05-10",
+        "limit": 8000000,
+        "balance": 4500000,
+        "monthly_payment": 380000,
+        "status": "active"
+      },
+      {
+        "type": "leasing",
+        "creditor_type": "leasing_company",
+        "opened_at": "2024-02-27",
+        "limit": 4200000,
+        "balance": 2900000,
+        "monthly_payment": 210000,
+        "status": "active"
+      },
+      {
+        "type": "overdraft",
+        "creditor_type": "bank",
+        "opened_at": "2022-08-15",
+        "limit": 3000000,
+        "balance": 1200000,
+        "monthly_payment": 160000,
+        "status": "active"
+      },
+      {
+        "type": "loan",
+        "creditor_type": "bank",
+        "opened_at": "2019-04-01",
+        "closed_at": "2022-03-30",
+        "limit": 3500000,
+        "balance": 0,
+        "monthly_payment": 0,
+        "status": "closed"
+      }
+    ]
+  },
+  {
+    "inn": "504718329642",
+    "score": 642,
+    "history_length_months": 11,
+    "inquiries_30d": 1,
+    "payment_discipline_24m": {
+      "overdue_1_29": 0,
+      "overdue_30_59": 0,
+      "overdue_60_89": 0,
+      "overdue_90_plus": 0
+    },
+    "loans": [
+      {
+        "type": "credit_card",
+        "creditor_type": "bank",
+        "opened_at": "2025-11-20",
+        "limit": 150000,
+        "balance": 0,
+        "monthly_payment": 0,
+        "status": "active"
+      }
+    ]
+  },
+  {
+    "inn": "6671034827",
+    "score": 452,
+    "history_length_months": 110,
+    "inquiries_30d": 0,
+    "payment_discipline_24m": {
+      "overdue_1_29": 0,
+      "overdue_30_59": 0,
+      "overdue_60_89": 0,
+      "overdue_90_plus": 0
+    },
+    "loans": [
+      {
+        "type": "loan",
+        "creditor_type": "bank",
+        "opened_at": "2019-07-01",
+        "closed_at": "2023-12-25",
+        "limit": 12000000,
+        "balance": 0,
+        "monthly_payment": 0,
+        "status": "closed"
+      },
+      {
+        "type": "leasing",
+        "creditor_type": "leasing_company",
+        "opened_at": "2020-03-12",
+        "closed_at": "2024-03-11",
+        "limit": 6800000,
+        "balance": 0,
+        "monthly_payment": 0,
+        "status": "closed"
+      }
+    ]
+  },
+  {
+    "inn": "5406247181",
+    "score": 724,
+    "history_length_months": 54,
+    "inquiries_30d": 2,
+    "payment_discipline_24m": {
+      "overdue_1_29": 0,
+      "overdue_30_59": 0,
+      "overdue_60_89": 0,
+      "overdue_90_plus": 0
+    },
+    "loans": [
+      {
+        "type": "credit_line",
+        "creditor_type": "bank",
+        "opened_at": "2023-10-05",
+        "limit": 9000000,
+        "balance": 6100000,
+        "monthly_payment": 520000,
+        "status": "active"
+      },
+      {
+        "type": "loan",
+        "creditor_type": "bank",
+        "opened_at": "2024-06-21",
+        "limit": 7000000,
+        "balance": 4800000,
+        "monthly_payment": 340000,
+        "status": "active"
+      }
+    ]
+  }
+]
