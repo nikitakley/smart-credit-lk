@@ -31,7 +31,7 @@ class AnalystDecisionRequest(CamelModel):
         examples=["Снизили сумму из-за признаков риска"],
     )
     reason_code: RejectReason | None = Field(default=None, description="Причина отказа из справочника, для reject")
-    info_items: list[InfoRequestItem] | None = Field(default=None, descriprion="Что запросить у клиента, для request_docs")
+    info_items: list[InfoRequestItem] | None = Field(default=None, description="Что запросить у клиента, для request_docs")
 
 
 class DictionaryItem(CamelModel):
