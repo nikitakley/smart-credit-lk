@@ -51,7 +51,7 @@
             "description": "Successful Response"
           },
           "404": {
-            "description": "Объект не найден",
+            "description": "Объект не найден или недоступен пользователю (`*_not_found`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -86,7 +86,7 @@
             }
           },
           "404": {
-            "description": "Объект не найден",
+            "description": "Объект не найден или недоступен пользователю (`*_not_found`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -128,7 +128,7 @@
             }
           },
           "404": {
-            "description": "Объект не найден",
+            "description": "Объект не найден или недоступен пользователю (`*_not_found`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -138,7 +138,7 @@
             }
           },
           "422": {
-            "description": "Ошибка валидации",
+            "description": "Ошибка валидации (`validation_error`, подробности в `fields`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -163,7 +163,7 @@
             "description": "Successful Response"
           },
           "401": {
-            "description": "Нет или недействителен токен",
+            "description": "Нет или недействителен токен (`unauthorized`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -199,7 +199,7 @@
             }
           },
           "401": {
-            "description": "Нет или недействителен токен",
+            "description": "Нет или недействителен токен (`unauthorized`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -222,7 +222,7 @@
           "Компания, продукты, справочники"
         ],
         "summary": "Компания текущего клиента",
-        "description": "Реквизиты известны банку заранее - клиент их не вводит.",
+        "description": "Реквизиты известны банку заранее — клиент их не вводит.",
         "operationId": "my_company_api_me_company_get",
         "responses": {
           "200": {
@@ -236,7 +236,7 @@
             }
           },
           "401": {
-            "description": "Нет или недействителен токен",
+            "description": "Нет или недействителен токен (`unauthorized`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -246,7 +246,7 @@
             }
           },
           "403": {
-            "description": "Недостаточно прав",
+            "description": "Недостаточно прав (`forbidden`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -256,7 +256,7 @@
             }
           },
           "404": {
-            "description": "Объект не найден",
+            "description": "Объект не найден или недоступен пользователю (`*_not_found`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -328,7 +328,7 @@
             }
           },
           "422": {
-            "description": "Ошибка валидации",
+            "description": "Ошибка валидации (`validation_error`, подробности в `fields`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -384,7 +384,7 @@
             }
           },
           "401": {
-            "description": "Нет или недействителен токен",
+            "description": "Нет или недействителен токен (`unauthorized`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -394,7 +394,7 @@
             }
           },
           "403": {
-            "description": "Недостаточно прав",
+            "description": "Недостаточно прав (`forbidden`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -439,7 +439,7 @@
             }
           },
           "401": {
-            "description": "Нет или недействителен токен",
+            "description": "Нет или недействителен токен (`unauthorized`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -449,7 +449,7 @@
             }
           },
           "403": {
-            "description": "Недостаточно прав",
+            "description": "Недостаточно прав (`forbidden`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -459,7 +459,7 @@
             }
           },
           "422": {
-            "description": "Ошибка валидации",
+            "description": "Ошибка валидации (`validation_error`, подробности в `fields`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -512,7 +512,7 @@
             }
           },
           "401": {
-            "description": "Нет или недействителен токен",
+            "description": "Нет или недействителен токен (`unauthorized`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -522,7 +522,7 @@
             }
           },
           "403": {
-            "description": "Недостаточно прав",
+            "description": "Недостаточно прав (`forbidden`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -532,7 +532,7 @@
             }
           },
           "404": {
-            "description": "Объект не найден",
+            "description": "Объект не найден или недоступен пользователю (`*_not_found`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -598,7 +598,7 @@
             }
           },
           "401": {
-            "description": "Нет или недействителен токен",
+            "description": "Нет или недействителен токен (`unauthorized`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -608,7 +608,7 @@
             }
           },
           "403": {
-            "description": "Недостаточно прав",
+            "description": "Недостаточно прав (`forbidden`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -618,7 +618,7 @@
             }
           },
           "404": {
-            "description": "Объект не найден",
+            "description": "Объект не найден или недоступен пользователю (`*_not_found`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -628,7 +628,7 @@
             }
           },
           "409": {
-            "description": "Действие недопустимо в текущем статусе",
+            "description": "Действие недопустимо в текущем состоянии заявки. Коды:\n- `not_draft` — заявка уже не черновик\n- `concurrent_update` — заявку одновременно изменил другой запрос — перечитайте её и повторите действие",
             "content": {
               "application/json": {
                 "schema": {
@@ -638,7 +638,7 @@
             }
           },
           "422": {
-            "description": "Ошибка валидации",
+            "description": "Ошибка валидации (`validation_error`, подробности в `fields`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -714,7 +714,7 @@
             }
           },
           "401": {
-            "description": "Нет или недействителен токен",
+            "description": "Нет или недействителен токен (`unauthorized`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -724,7 +724,7 @@
             }
           },
           "403": {
-            "description": "Недостаточно прав",
+            "description": "Недостаточно прав (`forbidden`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -734,7 +734,7 @@
             }
           },
           "404": {
-            "description": "Объект не найден",
+            "description": "Объект не найден или недоступен пользователю (`*_not_found`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -744,7 +744,7 @@
             }
           },
           "409": {
-            "description": "Действие недопустимо в текущем статусе",
+            "description": "Действие недопустимо в текущем состоянии заявки. Коды:\n- `not_draft` — заявка уже не черновик\n- `invalid_transition` — действие недопустимо в текущем статусе заявки\n- `concurrent_update` — заявку одновременно изменил другой запрос — перечитайте её и повторите действие",
             "content": {
               "application/json": {
                 "schema": {
@@ -754,7 +754,7 @@
             }
           },
           "422": {
-            "description": "Ошибка валидации",
+            "description": "Ошибка валидации (`validation_error`, подробности в `fields`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -812,7 +812,7 @@
             }
           },
           "401": {
-            "description": "Нет или недействителен токен",
+            "description": "Нет или недействителен токен (`unauthorized`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -822,7 +822,7 @@
             }
           },
           "403": {
-            "description": "Недостаточно прав",
+            "description": "Недостаточно прав (`forbidden`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -832,7 +832,7 @@
             }
           },
           "404": {
-            "description": "Объект не найден",
+            "description": "Объект не найден или недоступен пользователю (`*_not_found`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -842,7 +842,7 @@
             }
           },
           "409": {
-            "description": "Действие недопустимо в текущем статусе",
+            "description": "Действие недопустимо в текущем состоянии заявки. Коды:\n- `no_info_request` — банк не запрашивал дополнительную информацию\n- `invalid_transition` — действие недопустимо в текущем статусе заявки\n- `concurrent_update` — заявку одновременно изменил другой запрос — перечитайте её и повторите действие",
             "content": {
               "application/json": {
                 "schema": {
@@ -852,7 +852,7 @@
             }
           },
           "422": {
-            "description": "Ошибка валидации",
+            "description": "Ошибка валидации (`validation_error`, подробности в `fields`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -900,7 +900,7 @@
             }
           },
           "401": {
-            "description": "Нет или недействителен токен",
+            "description": "Нет или недействителен токен (`unauthorized`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -910,7 +910,7 @@
             }
           },
           "403": {
-            "description": "Недостаточно прав",
+            "description": "Недостаточно прав (`forbidden`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -920,7 +920,7 @@
             }
           },
           "404": {
-            "description": "Объект не найден",
+            "description": "Объект не найден или недоступен пользователю (`*_not_found`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -930,7 +930,7 @@
             }
           },
           "409": {
-            "description": "Действие недопустимо в текущем статусе",
+            "description": "Действие недопустимо в текущем состоянии заявки. Коды:\n- `no_offer` — нет действующего предложения банка\n- `offer_expired` — срок действия предложения истёк\n- `invalid_transition` — действие недопустимо в текущем статусе заявки\n- `concurrent_update` — заявку одновременно изменил другой запрос — перечитайте её и повторите действие",
             "content": {
               "application/json": {
                 "schema": {
@@ -987,7 +987,7 @@
             }
           },
           "401": {
-            "description": "Нет или недействителен токен",
+            "description": "Нет или недействителен токен (`unauthorized`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -997,7 +997,7 @@
             }
           },
           "403": {
-            "description": "Недостаточно прав",
+            "description": "Недостаточно прав (`forbidden`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1007,7 +1007,7 @@
             }
           },
           "404": {
-            "description": "Объект не найден",
+            "description": "Объект не найден или недоступен пользователю (`*_not_found`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1017,7 +1017,7 @@
             }
           },
           "409": {
-            "description": "Действие недопустимо в текущем статусе",
+            "description": "Действие недопустимо в текущем состоянии заявки. Коды:\n- `no_offer` — нет действующего предложения банка\n- `offer_expired` — срок действия предложения истёк\n- `invalid_transition` — действие недопустимо в текущем статусе заявки\n- `concurrent_update` — заявку одновременно изменил другой запрос — перечитайте её и повторите действие",
             "content": {
               "application/json": {
                 "schema": {
@@ -1075,7 +1075,7 @@
             }
           },
           "401": {
-            "description": "Нет или недействителен токен",
+            "description": "Нет или недействителен токен (`unauthorized`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1085,7 +1085,7 @@
             }
           },
           "403": {
-            "description": "Недостаточно прав",
+            "description": "Недостаточно прав (`forbidden`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1095,7 +1095,7 @@
             }
           },
           "404": {
-            "description": "Объект не найден",
+            "description": "Объект не найден или недоступен пользователю (`*_not_found`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1105,7 +1105,7 @@
             }
           },
           "409": {
-            "description": "Действие недопустимо в текущем статусе",
+            "description": "Действие недопустимо в текущем состоянии заявки. Коды:\n- `not_signing` — договор сейчас не на подписании\n- `concurrent_update` — заявку одновременно изменил другой запрос — перечитайте её и повторите действие",
             "content": {
               "application/json": {
                 "schema": {
@@ -1173,7 +1173,7 @@
             }
           },
           "401": {
-            "description": "Нет или недействителен токен",
+            "description": "Нет или недействителен токен (`unauthorized`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1183,7 +1183,7 @@
             }
           },
           "403": {
-            "description": "Недостаточно прав",
+            "description": "Недостаточно прав (`forbidden`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1193,7 +1193,7 @@
             }
           },
           "404": {
-            "description": "Объект не найден",
+            "description": "Объект не найден или недоступен пользователю (`*_not_found`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1203,7 +1203,7 @@
             }
           },
           "409": {
-            "description": "Действие недопустимо в текущем статусе",
+            "description": "Действие недопустимо в текущем состоянии заявки. Коды:\n- `not_signing` — договор сейчас не на подписании\n- `code_not_requested` — код подписи ещё не запрашивался\n- `code_expired` — срок действия кода подписи истёк\n- `code_attempts_exceeded` — попытки ввода кода закончились — нужен новый код\n- `invalid_transition` — действие недопустимо в текущем статусе заявки\n- `concurrent_update` — заявку одновременно изменил другой запрос — перечитайте её и повторите действие",
             "content": {
               "application/json": {
                 "schema": {
@@ -1213,7 +1213,7 @@
             }
           },
           "422": {
-            "description": "Ошибка валидации",
+            "description": "Ошибка валидации (`validation_error`, подробности в `fields`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1274,7 +1274,7 @@
             }
           },
           "401": {
-            "description": "Нет или недействителен токен",
+            "description": "Нет или недействителен токен (`unauthorized`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1284,7 +1284,7 @@
             }
           },
           "403": {
-            "description": "Недостаточно прав",
+            "description": "Недостаточно прав (`forbidden`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1341,7 +1341,7 @@
             }
           },
           "401": {
-            "description": "Нет или недействителен токен",
+            "description": "Нет или недействителен токен (`unauthorized`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1351,7 +1351,7 @@
             }
           },
           "403": {
-            "description": "Недостаточно прав",
+            "description": "Недостаточно прав (`forbidden`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1361,7 +1361,7 @@
             }
           },
           "404": {
-            "description": "Объект не найден",
+            "description": "Объект не найден или недоступен пользователю (`*_not_found`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1429,7 +1429,7 @@
             }
           },
           "401": {
-            "description": "Нет или недействителен токен",
+            "description": "Нет или недействителен токен (`unauthorized`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1439,7 +1439,7 @@
             }
           },
           "403": {
-            "description": "Недостаточно прав",
+            "description": "Недостаточно прав (`forbidden`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1449,7 +1449,7 @@
             }
           },
           "404": {
-            "description": "Объект не найден",
+            "description": "Объект не найден или недоступен пользователю (`*_not_found`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1459,7 +1459,7 @@
             }
           },
           "409": {
-            "description": "Действие недопустимо в текущем статусе",
+            "description": "Действие недопустимо в текущем состоянии заявки. Коды:\n- `decision_not_allowed` — решение по заявке в этом статусе не принимается\n- `invalid_transition` — действие недопустимо в текущем статусе заявки\n- `concurrent_update` — заявку одновременно изменил другой запрос — перечитайте её и повторите действие",
             "content": {
               "application/json": {
                 "schema": {
@@ -1469,11 +1469,99 @@
             }
           },
           "422": {
-            "description": "Ошибка валидации",
+            "description": "Ошибка валидации (`validation_error`, подробности в `fields`)",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/analyst/applications/{application_id}/checks/refresh": {
+      "post": {
+        "tags": [
+          "Сотрудник банка"
+        ],
+        "summary": "Повторно запросить данные из источников",
+        "description": "Запрашивает ЕГРЮЛ/ЕГРИП, НБКИ и «Прозрачный бизнес» и обновляет проверки заявки. Статус заявки не меняется; в историю пишется событие kind = checks_refreshed. Доступно в статусах enrichment, scoring, manual_review, docs_requested. Если источник не ответил, проверка получает статус unavailable — остальные данные всё равно сохраняются.",
+        "operationId": "refresh_checks_api_analyst_applications__application_id__checks_refresh_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Application Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationAnalyst"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Нет или недействителен токен (`unauthorized`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Недостаточно прав (`forbidden`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Объект не найден или недоступен пользователю (`*_not_found`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Действие недопустимо в текущем состоянии заявки. Коды:\n- `checks_refresh_not_allowed` — в этом статусе данные из источников не запрашиваются\n- `not_submitted` — заявка ещё не подана\n- `concurrent_update` — заявку одновременно изменил другой запрос — перечитайте её и повторите действие",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -1548,7 +1636,7 @@
                 "type": "null"
               }
             ],
-            "description": "Причина отказа из справочника, для reject"
+            "description": "Причина отказа, для reject"
           },
           "infoItems": {
             "anyOf": [
@@ -1940,7 +2028,7 @@
           "updatedAt"
         ],
         "title": "ApplicationAnalyst",
-        "description": "Заявка со стороны сотрудника банка: полная информация."
+        "description": "Заявка глазами сотрудника банка: полная информация."
       },
       "ApplicationClient": {
         "properties": {
@@ -2155,7 +2243,7 @@
           "updatedAt"
         ],
         "title": "ApplicationClient",
-        "description": "Заявка со стороны клиента: нет внутренних оценок банка."
+        "description": "Заявка глазами клиента: без внутренних оценок банка."
       },
       "ApplicationCreate": {
         "properties": {
@@ -2243,7 +2331,7 @@
         },
         "type": "object",
         "title": "ApplicationCreate",
-        "description": "Создание черновика. Поля необязательны - мастер заполняет их по шагам."
+        "description": "Создание черновика. Все поля необязательны — мастер заполняет их по шагам."
       },
       "ApplicationStatus": {
         "type": "string",
@@ -2336,7 +2424,7 @@
           "updatedAt"
         ],
         "title": "ApplicationSummary",
-        "description": "Строка списка \"Мои заявки\" (со стороны клиента)."
+        "description": "Строка списка «Мои заявки»."
       },
       "ApplicationUpdate": {
         "properties": {
@@ -2426,6 +2514,34 @@
         "title": "ApplicationUpdate",
         "description": "Частичное обновление черновика: передаются только изменённые поля."
       },
+      "BankDetails": {
+        "properties": {
+          "monthlyRevenue": {
+            "type": "integer",
+            "title": "Monthlyrevenue",
+            "description": "Среднемесячные поступления на счёт, ₽"
+          },
+          "revenueGrowth": {
+            "type": "number",
+            "title": "Revenuegrowth",
+            "description": "Изменение оборотов за 12 месяцев, %"
+          },
+          "historyMonths": {
+            "type": "integer",
+            "title": "Historymonths",
+            "description": "За сколько месяцев есть обороты, мес."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "monthlyRevenue",
+          "revenueGrowth",
+          "historyMonths"
+        ],
+        "title": "BankDetails",
+        "description": "Внутренние данные банка: обороты по расчётному счёту."
+      },
       "Check": {
         "properties": {
           "source": {
@@ -2469,7 +2585,7 @@
           "summary"
         ],
         "title": "Check",
-        "description": "Результат проверки по источнику. Клиент не видит деталей."
+        "description": "Результат проверки по источнику. Клиенту показывается без деталей."
       },
       "CheckDetailed": {
         "properties": {
@@ -2506,10 +2622,28 @@
             "title": "Fetchedat"
           },
           "details": {
-            "additionalProperties": true,
-            "type": "object",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BankDetails"
+              },
+              {
+                "$ref": "#/components/schemas/RegistryDetails"
+              },
+              {
+                "$ref": "#/components/schemas/CreditHistoryDetails"
+              },
+              {
+                "$ref": "#/components/schemas/RiskDetails"
+              },
+              {
+                "$ref": "#/components/schemas/UnavailableDetails"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Details",
-            "description": "Сырые данные источника (для аналитика)"
+            "description": "Данные источника (только для аналитика). Формат зависит от source: bank — BankDetails, egrul — RegistryDetails, nbki — CreditHistoryDetails, pb — RiskDetails; при status = unavailable — UnavailableDetails. null — данных нет (проверка из демо-данных, ещё не обновлялась)."
           }
         },
         "type": "object",
@@ -2718,7 +2852,7 @@
           "bki": {
             "type": "boolean",
             "title": "Bki",
-            "description": "Согласие на запрос в бюро кредитных историй (БКИ)"
+            "description": "Согласие на запрос в бюро кредитных историй"
           },
           "personalData": {
             "type": "boolean",
@@ -2740,7 +2874,7 @@
             "minLength": 1,
             "title": "Name",
             "examples": [
-              "Иванов Иван Иванович"
+              "Гарипов Рустам Ильдарович"
             ]
           },
           "phone": {
@@ -2767,6 +2901,95 @@
           "email"
         ],
         "title": "Contact"
+      },
+      "CreditHistoryDetails": {
+        "properties": {
+          "reportId": {
+            "type": "string",
+            "title": "Reportid"
+          },
+          "historyFound": {
+            "type": "boolean",
+            "title": "Historyfound",
+            "description": "false — кредитной истории нет; это результат, а не ошибка"
+          },
+          "bureauScore": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bureauscore",
+            "description": "Рейтинг бюро, 300–850"
+          },
+          "historyMonths": {
+            "type": "integer",
+            "title": "Historymonths",
+            "description": "Длина кредитной истории, мес.",
+            "default": 0
+          },
+          "activeLoans": {
+            "type": "integer",
+            "title": "Activeloans",
+            "default": 0
+          },
+          "totalDebt": {
+            "type": "integer",
+            "title": "Totaldebt",
+            "description": "Остаток долга по действующим кредитам, ₽",
+            "default": 0
+          },
+          "monthlyPayments": {
+            "type": "integer",
+            "title": "Monthlypayments",
+            "description": "Платежи по действующим кредитам, ₽/мес.",
+            "default": 0
+          },
+          "currentOverdue": {
+            "type": "integer",
+            "title": "Currentoverdue",
+            "description": "Текущая просроченная задолженность, ₽",
+            "default": 0
+          },
+          "overduesUpTo29": {
+            "type": "integer",
+            "title": "Overduesupto29",
+            "default": 0
+          },
+          "overdues30To89": {
+            "type": "integer",
+            "title": "Overdues30To89",
+            "default": 0
+          },
+          "overdues90Plus": {
+            "type": "integer",
+            "title": "Overdues90Plus",
+            "default": 0
+          },
+          "overdues24m": {
+            "type": "integer",
+            "title": "Overdues24M",
+            "description": "Всего просрочек за 24 месяца",
+            "default": 0
+          },
+          "inquiriesLastMonth": {
+            "type": "integer",
+            "title": "Inquirieslastmonth",
+            "description": "Запросов кредитной истории за 30 дней",
+            "default": 0
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reportId",
+          "historyFound"
+        ],
+        "title": "CreditHistoryDetails",
+        "description": "Бюро кредитных историй. Суммы — в рублях, просрочки — число случаев за 24 месяца."
       },
       "DecidedBy": {
         "type": "string",
@@ -2881,6 +3104,14 @@
             "type": "array",
             "title": "Rejectreasons"
           },
+          "unavailableReasons": {
+            "items": {
+              "$ref": "#/components/schemas/DictionaryItem"
+            },
+            "type": "array",
+            "title": "Unavailablereasons",
+            "description": "Почему источник не ответил (details.reason)"
+          },
           "infoItems": {
             "items": {
               "$ref": "#/components/schemas/InfoRequestItem"
@@ -2895,6 +3126,7 @@
           "purposes",
           "collateralTypes",
           "rejectReasons",
+          "unavailableReasons",
           "infoItems"
         ],
         "title": "Dictionaries"
@@ -2955,6 +3187,14 @@
         ],
         "title": "ErrorResponse"
       },
+      "EventKind": {
+        "type": "string",
+        "enum": [
+          "status_changed",
+          "checks_refreshed"
+        ],
+        "title": "EventKind"
+      },
       "Explanation": {
         "properties": {
           "text": {
@@ -2969,7 +3209,7 @@
           "source": {
             "type": "string",
             "title": "Source",
-            "description": "Объяснение строится правилами",
+            "description": "Объяснение строится правилами, не моделью",
             "default": "rules"
           }
         },
@@ -3009,8 +3249,7 @@
           "impact",
           "weight"
         ],
-        "title": "Factor",
-        "description": "Фактор и его влияние. Клиент не видит баллов."
+        "title": "Factor"
       },
       "FieldError": {
         "properties": {
@@ -3097,8 +3336,14 @@
       },
       "HistoryEvent": {
         "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/EventKind",
+            "description": "status_changed — заявка перешла в status; checks_refreshed — данные из источников запрошены повторно, status не изменился",
+            "default": "status_changed"
+          },
           "status": {
-            "$ref": "#/components/schemas/ApplicationStatus"
+            "$ref": "#/components/schemas/ApplicationStatus",
+            "description": "Статус заявки после события"
           },
           "at": {
             "type": "string",
@@ -3691,6 +3936,160 @@
         ],
         "title": "RecommendResponse"
       },
+      "RegistryDetails": {
+        "properties": {
+          "found": {
+            "type": "boolean",
+            "title": "Found",
+            "description": "false — бизнес не найден в реестре, остальные поля пустые"
+          },
+          "registry": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "egrul",
+                  "egrip"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registry"
+          },
+          "ogrn": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ogrn"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "liquidating",
+                  "liquidated",
+                  "reorganizing",
+                  "bankrupt"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "statusName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Statusname",
+            "description": "Статус словами, как в реестре"
+          },
+          "statusChangedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Statuschangedat"
+          },
+          "registeredAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registeredat"
+          },
+          "ageMonths": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agemonths",
+            "description": "Срок с регистрации, мес."
+          },
+          "head": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Head",
+            "description": "Руководитель; у ИП — null"
+          },
+          "headPosition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Headposition"
+          },
+          "okved": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Okved",
+            "description": "Основной ОКВЭД: код и название"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "found"
+        ],
+        "title": "RegistryDetails",
+        "description": "ЕГРЮЛ / ЕГРИП."
+      },
       "RejectReason": {
         "type": "string",
         "enum": [
@@ -3702,6 +4101,132 @@
           "other"
         ],
         "title": "RejectReason"
+      },
+      "RiskDetails": {
+        "properties": {
+          "found": {
+            "type": "boolean",
+            "title": "Found",
+            "description": "false — сведений нет, остальные поля пустые"
+          },
+          "taxRegime": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Taxregime",
+            "description": "ОСН, УСН, ПСН, ЕСХН, АУСН"
+          },
+          "employees": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employees",
+            "description": "Среднесписочная численность"
+          },
+          "massAddressCompanies": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Massaddresscompanies",
+            "description": "Компаний по адресу, если адрес массовый"
+          },
+          "massHeadCompanies": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Massheadcompanies",
+            "description": "Компаний у руководителя, если он массовый"
+          },
+          "disqualifiedPersons": {
+            "type": "boolean",
+            "title": "Disqualifiedpersons",
+            "default": false
+          },
+          "unreliableInfo": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Unreliableinfo",
+            "description": "Недостоверные сведения: «адрес», «руководитель», «учредитель»",
+            "default": []
+          },
+          "taxArrears": {
+            "type": "integer",
+            "title": "Taxarrears",
+            "description": "Задолженность по налогам, ₽",
+            "default": 0
+          },
+          "reportingOverdue": {
+            "type": "boolean",
+            "title": "Reportingoverdue",
+            "description": "Не сдаёт отчётность более года",
+            "default": false
+          },
+          "reportYear": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reportyear",
+            "description": "Год последней бухгалтерской отчётности"
+          },
+          "revenue": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revenue",
+            "description": "Выручка за report_year, ₽"
+          },
+          "netProfit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Netprofit",
+            "description": "Чистая прибыль за report_year, ₽"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "found"
+        ],
+        "title": "RiskDetails",
+        "description": "ФНС «Прозрачный бизнес»."
       },
       "Role": {
         "type": "string",
@@ -3852,7 +4377,7 @@
               }
             ],
             "title": "Code",
-            "description": "Код подписи. Возвращается только в демо-режиме"
+            "description": "Код подписи. Возвращается только в демо-режиме (DEMO_SHOW_SIGN_CODE=true)"
           }
         },
         "type": "object",
@@ -4034,6 +4559,43 @@
           "hint"
         ],
         "title": "TestAccount"
+      },
+      "UnavailableDetails": {
+        "properties": {
+          "reason": {
+            "$ref": "#/components/schemas/UnavailableReason"
+          },
+          "httpStatus": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Httpstatus",
+            "description": "HTTP-код ответа источника, если он был"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "UnavailableDetails",
+        "description": "Источник не ответил после всех попыток."
+      },
+      "UnavailableReason": {
+        "type": "string",
+        "enum": [
+          "timeout",
+          "connection_error",
+          "server_error",
+          "request_rejected",
+          "invalid_response"
+        ],
+        "title": "UnavailableReason"
       },
       "User": {
         "properties": {

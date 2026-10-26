@@ -60,7 +60,7 @@ def get_application(application_id: str, user: ClientUser, db: DbSession) -> App
     response_model=ApplicationClient,
     summary="Сохранить изменения черновика",
     description="Передаются только изменённые поля. Вызывать при переходе между шагами мастера.",
-    responses=error_responses(401, 403, 404, 409, 422),
+    responses=error_responses(401, 403, 404, 409, 422, conflicts=("not_draft", "concurrent_update")),
 )
 def update_application(
     application_id: str, body: ApplicationUpdate, user: ClientUser, db: DbSession
@@ -75,7 +75,9 @@ def update_application(
     summary="Отправить заявку в банк",
     description="Проверяет обязательные поля и согласия, переводит заявку в submitted. "
     "Дальше заявка обрабатывается асинхронно.",
-    responses=error_responses(401, 403, 404, 409, 422),
+    responses=error_responses(
+        401, 403, 404, 409, 422, conflicts=("not_draft", "invalid_transition", "concurrent_update")
+    ),
 )
 def submit_application(
     application_id: str, body: SubmitRequest, user: ClientUser, db: DbSession, idempotency_key: IdempotencyKey = None
@@ -89,7 +91,9 @@ def submit_application(
     status_code=status.HTTP_202_ACCEPTED,
     summary="Ответить на запрос дополнительной информации",
     description="Доступно в статусе docs_requested. После ответа заявка снова проходит проверку.",
-    responses=error_responses(401, 403, 404, 409, 422),
+    responses=error_responses(
+        401, 403, 404, 409, 422, conflicts=("no_info_request", "invalid_transition", "concurrent_update")
+    ),
 )
 def respond_info(
     application_id: str, body: InfoResponseRequest, user: ClientUser, db: DbSession
@@ -102,7 +106,9 @@ def respond_info(
     response_model=ApplicationClient,
     summary="Принять предложение банка",
     description="Ошибки: no_offer, offer_expired (409). Переводит заявку в signing.",
-    responses=error_responses(401, 403, 404, 409),
+    responses=error_responses(
+        401, 403, 404, 409, conflicts=("no_offer", "offer_expired", "invalid_transition", "concurrent_update")
+    ),
 )
 def accept_offer(application_id: str, user: ClientUser, db: DbSession) -> ApplicationClient:
     return application_to_client(service.accept_offer(db, user, application_id))
@@ -112,7 +118,9 @@ def accept_offer(application_id: str, user: ClientUser, db: DbSession) -> Applic
     "/{application_id}/offer/decline",
     response_model=ApplicationClient,
     summary="Отказаться от предложения банка",
-    responses=error_responses(401, 403, 404, 409),
+    responses=error_responses(
+        401, 403, 404, 409, conflicts=("no_offer", "offer_expired", "invalid_transition", "concurrent_update")
+    ),
 )
 def decline_offer(application_id: str, user: ClientUser, db: DbSession) -> ApplicationClient:
     return application_to_client(service.decline_offer(db, user, application_id))
@@ -123,7 +131,7 @@ def decline_offer(application_id: str, user: ClientUser, db: DbSession) -> Appli
     response_model=SignCodeResponse,
     summary="Получить код для подписания договора",
     description="Код живёт 5 минут, даётся 3 попытки. В демо-режиме код возвращается в ответе.",
-    responses=error_responses(401, 403, 404, 409),
+    responses=error_responses(401, 403, 404, 409, conflicts=("not_signing", "concurrent_update")),
 )
 def request_sign_code(application_id: str, user: ClientUser, db: DbSession) -> SignCodeResponse:
     return service.request_sign_code(db, user, application_id)
@@ -135,7 +143,11 @@ def request_sign_code(application_id: str, user: ClientUser, db: DbSession) -> S
     summary="Подписать договор кодом",
     description="Ошибки: invalid_code (422), not_signing / code_expired / code_attempts_exceeded (409). "
     "После подписания средства зачисляются на счёт, статус issued.",
-    responses=error_responses(401, 403, 404, 409, 422),
+    responses=error_responses(
+        401, 403, 404, 409, 422,
+        conflicts=("not_signing", "code_not_requested", "code_expired", "code_attempts_exceeded",
+                   "invalid_transition", "concurrent_update"),
+    ),
 )
 def sign_contract(application_id: str, body: SignRequest, user: ClientUser, db: DbSession) -> ApplicationClient:
     return application_to_client(service.sign(db, user, application_id, body.code))
