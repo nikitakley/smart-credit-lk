@@ -12,6 +12,9 @@
 | Pydantic | 2.14.1 | MIT | Схемы и валидация данных |
 | pydantic-settings | 2.16.1 | MIT | Настройки из переменных окружения |
 | PyJWT | 2.15.1 | MIT | JWT-токены |
+| SQLAlchemy | 2.1.6 | MIT | ORM и работа с базой данных |
+| Alembic | 1.20.1 | MIT | Миграции схемы базы данных |
+| psycopg (`psycopg[binary]`) | 3.3.6 | LGPL-3.0-only | Драйвер PostgreSQL; используется без изменений как подключаемая библиотека, бинарная сборка включает libpq (PostgreSQL License) |
 | Uvicorn | 0.54.0 | BSD-3-Clause | ASGI-сервер |
 | pytest (dev) | 9.1.1 | MIT | Тесты |
 | httpx2 (dev) | 2.16.0 | BSD-3-Clause | HTTP-клиент для тестов |
