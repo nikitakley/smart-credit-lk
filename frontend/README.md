@@ -30,7 +30,8 @@ API_TARGET=http://localhost:8080 npm run dev
 docker build -t smart-credit-frontend ./frontend
 ```
 
-Сервис `frontend` в `docker-compose.yml` (порт 8080) добавляет бэкенд.
+В `docker-compose.yml` фронтенд — сервис `frontend`: `docker compose up --build -d` из корня, затем http://localhost:8080
+(порт меняется переменной `WEB_PORT`). Сервис стартует после того, как `api` станет healthy.
 
 ## Демо-входы
 
