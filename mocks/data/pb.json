@@ -1,0 +1,153 @@
+[
+  {
+    "inn": "1655482318",
+    "tax_regime": "УСН",
+    "employees_avg": 14,
+    "mass_address": {
+      "flag": false,
+      "companies_count": 1
+    },
+    "mass_head": {
+      "flag": false,
+      "companies_count": 1
+    },
+    "disqualified_persons": false,
+    "unreliable_info": [],
+    "tax_arrears": {
+      "has_arrears": false,
+      "amount": 0
+    },
+    "reporting_overdue": false,
+    "financials": [
+      {
+        "year": 2025,
+        "revenue": 18900000,
+        "net_profit": 1240000
+      },
+      {
+        "year": 2024,
+        "revenue": 6100000,
+        "net_profit": 310000
+      }
+    ]
+  },
+  {
+    "inn": "7810624578",
+    "tax_regime": "ОСН",
+    "employees_avg": 38,
+    "mass_address": {
+      "flag": false,
+      "companies_count": 1
+    },
+    "mass_head": {
+      "flag": false,
+      "companies_count": 1
+    },
+    "disqualified_persons": false,
+    "unreliable_info": [],
+    "tax_arrears": {
+      "has_arrears": false,
+      "amount": 0
+    },
+    "reporting_overdue": false,
+    "financials": [
+      {
+        "year": 2025,
+        "revenue": 49800000,
+        "net_profit": 6100000
+      },
+      {
+        "year": 2024,
+        "revenue": 40100000,
+        "net_profit": 4700000
+      }
+    ]
+  },
+  {
+    "inn": "504718329642",
+    "tax_regime": "УСН",
+    "employees_avg": 3,
+    "mass_address": {
+      "flag": false,
+      "companies_count": 1
+    },
+    "mass_head": {
+      "flag": false,
+      "companies_count": 1
+    },
+    "disqualified_persons": false,
+    "unreliable_info": [],
+    "tax_arrears": {
+      "has_arrears": false,
+      "amount": 0
+    },
+    "reporting_overdue": false,
+    "financials": []
+  },
+  {
+    "inn": "6671034827",
+    "tax_regime": "ОСН",
+    "employees_avg": 0,
+    "mass_address": {
+      "flag": false,
+      "companies_count": 1
+    },
+    "mass_head": {
+      "flag": false,
+      "companies_count": 1
+    },
+    "disqualified_persons": false,
+    "unreliable_info": [
+      "address"
+    ],
+    "tax_arrears": {
+      "has_arrears": true,
+      "amount": 412300
+    },
+    "reporting_overdue": true,
+    "financials": [
+      {
+        "year": 2024,
+        "revenue": 4100000,
+        "net_profit": -2300000
+      },
+      {
+        "year": 2023,
+        "revenue": 11600000,
+        "net_profit": -800000
+      }
+    ]
+  },
+  {
+    "inn": "5406247181",
+    "tax_regime": "УСН",
+    "employees_avg": 9,
+    "mass_address": {
+      "flag": true,
+      "companies_count": 54
+    },
+    "mass_head": {
+      "flag": false,
+      "companies_count": 1
+    },
+    "disqualified_persons": false,
+    "unreliable_info": [],
+    "tax_arrears": {
+      "has_arrears": false,
+      "amount": 0
+    },
+    "reporting_overdue": false,
+    "financials": [
+      {
+        "year": 2025,
+        "revenue": 33100000,
+        "net_profit": 1900000
+      },
+      {
+        "year": 2024,
+        "revenue": 31800000,
+        "net_profit": 1700000
+      }
+    ]
+  }
+]
