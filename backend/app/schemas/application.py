@@ -1,11 +1,12 @@
-"""Заявка на кредит: входные модели и две проекции - клиентская и банковская (для аналитика)."""
+"""Заявка на кредит: входные модели и две проекции — клиентская и банковская (для аналитика)."""
 
 from datetime import datetime
-from typing import Any
 
 from pydantic import Field
 
 from app.schemas.base import CamelModel
+from app.schemas.checks import CheckDetails
+from app.schemas.company import Company, CompanyShort
 from app.schemas.enums import (
     Actor,
     ApplicationStatus,
@@ -14,6 +15,7 @@ from app.schemas.enums import (
     Collateral,
     DecidedBy,
     DecisionOutcome,
+    EventKind,
     Impact,
     InfoItemType,
     OfferType,
@@ -21,25 +23,23 @@ from app.schemas.enums import (
     RejectReason,
     Weight,
 )
-from app.schemas.company import Company, CompanyShort
-
 
 # --- [Входные данные клиента]
 
 
 class Contact(CamelModel):
-    name: str = Field(min_length=1, examples=["Иванов Иван Иванович"])
+    name: str = Field(min_length=1, examples=["Гарипов Рустам Ильдарович"])
     phone: str = Field(pattern=r"^\+?[\d\s()-]{10,}$", examples=["+7 (843) 000-27-14"])
     email: str = Field(pattern=r"^\S+@\S+\.\S+$", examples=["finance@prodmarket.example"])
 
 
 class Consents(CamelModel):
-    bki: bool = Field(description="Согласие на запрос в бюро кредитных историй (БКИ)")
+    bki: bool = Field(description="Согласие на запрос в бюро кредитных историй")
     personal_data: bool = Field(description="Согласие на обработку персональных данных")
 
 
 class ApplicationCreate(CamelModel):
-    """Создание черновика. Поля необязательны - мастер заполняет их по шагам."""
+    """Создание черновика. Все поля необязательны — мастер заполняет их по шагам."""
 
     product_id: str | None = Field(default=None, examples=["working-capital"])
     amount: int | None = Field(default=None, gt=0, examples=[1500000])
@@ -71,14 +71,19 @@ class InfoResponseRequest(CamelModel):
 
 
 class HistoryEvent(CamelModel):
-    status: ApplicationStatus
+    kind: EventKind = Field(
+        default=EventKind.status_changed,
+        description="status_changed — заявка перешла в status; checks_refreshed — данные из источников "
+        "запрошены повторно, status не изменился",
+    )
+    status: ApplicationStatus = Field(description="Статус заявки после события")
     at: datetime
     actor: Actor
     note: str | None = None
 
 
 class Check(CamelModel):
-    """Результат проверки по источнику. Клиент не видит деталей."""
+    """Результат проверки по источнику. Клиенту показывается без деталей."""
 
     source: CheckSource
     title: str = Field(examples=["Бюро кредитных историй"])
@@ -88,11 +93,15 @@ class Check(CamelModel):
 
 
 class CheckDetailed(Check):
-    details: dict[str, Any] = Field(default_factory=dict, description="Сырые данные источника (для аналитика)")
+    details: CheckDetails | None = Field(
+        default=None,
+        description="Данные источника (только для аналитика). Формат зависит от source: bank — BankDetails, "
+        "egrul — RegistryDetails, nbki — CreditHistoryDetails, pb — RiskDetails; при status = unavailable — "
+        "UnavailableDetails. null — данных нет (проверка из демо-данных, ещё не обновлялась).",
+    )
 
 
 class Factor(CamelModel):
-    """Фактор и его влияние. Клиент не видит баллов."""
     code: str
     label: str
     detail: str
@@ -150,7 +159,7 @@ class Decision(CamelModel):
 class Explanation(CamelModel):
     text: str
     generated_at: datetime
-    source: str = Field(default="rules", description="Объяснение строится правилами")
+    source: str = Field(default="rules", description="Объяснение строится правилами, не моделью")
 
 
 class OfferRequested(CamelModel):
@@ -228,14 +237,14 @@ class ApplicationBase(CamelModel):
 
 
 class ApplicationClient(ApplicationBase):
-    """Заявка со стороны клиента: нет внутренних оценок банка."""
+    """Заявка глазами клиента: без внутренних оценок банка."""
 
     checks: list[Check] = []
     factors: list[Factor] = []
 
 
 class ApplicationAnalyst(ApplicationBase):
-    """Заявка со стороны сотрудника банка: полная информация."""
+    """Заявка глазами сотрудника банка: полная информация."""
 
     checks: list[CheckDetailed] = []
     factors: list[ScoredFactor] = []
@@ -246,7 +255,7 @@ class ApplicationAnalyst(ApplicationBase):
 
 
 class ApplicationSummary(CamelModel):
-    """Строка списка "Мои заявки" (со стороны клиента)."""
+    """Строка списка «Мои заявки»."""
 
     id: str
     product_id: str | None = None

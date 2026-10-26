@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from app.config import get_settings
 from app.integrations.http import parse_response, request_json
-from app.schemas.base import CamelModel
+from app.schemas.checks import RegistryDetails
 
 SOURCE = "egr"
 
@@ -50,35 +50,20 @@ class _Extract(BaseModel):
     extract_date: date
 
 
-# --- [Внутренний формат банка]
-
-
-class RegistryInfo(CamelModel):
-    found: bool
-    registry: Literal["egrul", "egrip"] | None = None
-    ogrn: str | None = None
-    status: RegistryStatus | None = None
-    status_name: str | None = None
-    status_changed_at: date | None = None
-    registered_at: date | None = None
-    age_months: int | None = None
-    head: str | None = None
-    head_position: str | None = None
-    okved: str | None = None
-    address: str | None = None
+# --- [Перевод во внутренний формат банка (app/schemas/checks.py)]
 
 
 def _months_between(start: date, end: date) -> int:
     return (end.year - start.year) * 12 + end.month - start.month - (end.day < start.day)
 
 
-def fetch_registry_info(client: httpx.Client, inn: str) -> RegistryInfo:
+def fetch_registry_info(client: httpx.Client, inn: str) -> RegistryDetails:
     url = f"{get_settings().egr_base_url}/v1/extracts/{inn}"
     data = request_json(client, SOURCE, "GET", url)
     if data is None:
-        return RegistryInfo(found=False)
+        return RegistryDetails(found=False)
     extract = parse_response(SOURCE, _Extract, data)
-    return RegistryInfo(
+    return RegistryDetails(
         found=True,
         registry="egrul" if extract.registry == "EGRUL" else "egrip",
         ogrn=extract.ogrn,

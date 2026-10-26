@@ -1,7 +1,6 @@
 """Преобразование ORM-моделей (как данные хранятся) в схемы API (как их видит клиент)."""
 
-from app.schemas.product import Product
-from app.schemas.company import Company, CompanyShort, Founder, Okved
+from app.db import models
 from app.schemas.application import (
     AnalystQueueItem,
     ApplicationAnalyst,
@@ -23,8 +22,10 @@ from app.schemas.application import (
     Signing,
     SystemRecommendation,
 )
+from app.schemas.checks import parse_details
+from app.schemas.company import Company, CompanyShort, Founder, Okved
+from app.schemas.product import Product
 from app.services.finance import KEY_RATE
-from app.db import models
 
 # --- [Справочники]
 
@@ -39,7 +40,7 @@ def product_to_schema(product: models.Product) -> Product:
         max_amount=product.max_amount,
         max_term_months=product.max_term_months,
         spread=spread,
-        rate_from=round(KEY_RATE + spread, 2),  # в базе не хранится
+        rate_from=round(KEY_RATE + spread, 2),  # производное поле: в базе не хранится
     )
 
 
@@ -55,8 +56,8 @@ def company_to_schema(company: models.Company) -> Company:
         registered_at=company.registered_at,
         director=company.director,
         director_title=company.director_title,
-        founders=[Founder.model_validate(f) for f in company.founders],
-        okved=Okved(code=company.okved_code, title=company.okved_title),
+        founders=[Founder.model_validate(f) for f in company.founders],  # JSON → проверенные объекты
+        okved=Okved(code=company.okved_code, title=company.okved_title),  # две колонки → объект
         legal_address=company.legal_address,
         phone=company.phone,
         email=company.email,
@@ -64,6 +65,7 @@ def company_to_schema(company: models.Company) -> Company:
         source=company.source,
         fetched_at=company.fetched_at,
     )
+
 
 # --- [Части заявки]
 
@@ -162,12 +164,13 @@ def application_to_analyst(app: models.Application) -> ApplicationAnalyst:
         updated_at=app.updated_at,
         submitted_at=app.submitted_at,
         history=[
-            HistoryEvent(status=e.status, at=e.created_at, actor=e.actor, note=e.note) for e in app.events
+            HistoryEvent(kind=e.kind, status=e.status, at=e.created_at, actor=e.actor, note=e.note)
+            for e in app.events
         ],
         checks=[
             CheckDetailed(
                 source=c.source, title=c.title, status=c.status, summary=c.summary,
-                fetched_at=c.fetched_at, details=c.details,
+                fetched_at=c.fetched_at, details=parse_details(c.source, c.status, c.details),
             )
             for c in app.checks
         ],

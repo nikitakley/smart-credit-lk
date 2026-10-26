@@ -12,6 +12,7 @@ from app.integrations.egr import fetch_registry_info
 from app.integrations.http import SourceUnavailable, request_json
 from app.integrations.nbki import fetch_credit_history
 from app.integrations.pb import fetch_risk_profile
+from app.schemas.checks import UnavailableReason
 from app.schemas.enums import CompanyType
 
 URL = "http://source.test/v1/item"
@@ -49,7 +50,7 @@ def test_gives_up_after_all_attempts() -> None:
     client, calls = fake_source(status(503))
     with pytest.raises(SourceUnavailable) as error:
         request_json(client, "test", "GET", URL)
-    assert error.value.reason == "http_503"
+    assert (error.value.reason, error.value.http_status) == (UnavailableReason.server_error, 503)
     assert len(calls) == get_settings().integration_retries + 1
     # Все попытки — с одним идентификатором: в журналах это один логический запрос
     assert len({request.headers["X-Request-Id"] for request in calls}) == 1
@@ -61,11 +62,18 @@ def test_timeout_is_retried() -> None:
     assert len(calls) == 3
 
 
+def test_timeout_after_all_attempts() -> None:
+    client, _ = fake_source(timeout)
+    with pytest.raises(SourceUnavailable) as error:
+        request_json(client, "test", "GET", URL)
+    assert (error.value.reason, error.value.http_status) == (UnavailableReason.timeout, None)
+
+
 def test_client_errors_are_not_retried() -> None:
     client, calls = fake_source(status(401))
     with pytest.raises(SourceUnavailable) as error:
         request_json(client, "test", "GET", URL)
-    assert error.value.reason == "http_401"
+    assert (error.value.reason, error.value.http_status) == (UnavailableReason.request_rejected, 401)
     assert len(calls) == 1  # неверный ключ со второй попытки верным не станет
 
 
@@ -79,7 +87,7 @@ def test_unexpected_response_format() -> None:
     client, _ = fake_source(status(200, {"something": "else"}))
     with pytest.raises(SourceUnavailable) as error:
         fetch_registry_info(client, "1655482318")
-    assert error.value.reason == "invalid_response"
+    assert error.value.reason == UnavailableReason.invalid_response
 
 
 # --- [Совместимость с симулятором]
@@ -126,11 +134,11 @@ def test_source_outage_is_reported(simulator: TestClient) -> None:
     simulator.put("/admin/sources/pb", json={"mode": "error"})
     with pytest.raises(SourceUnavailable) as error:
         fetch_risk_profile(simulator, "5406247181")
-    assert error.value.reason == "http_503"
+    assert (error.value.reason, error.value.http_status) == (UnavailableReason.server_error, 503)
 
 
 def test_wrong_api_key_is_not_retried(simulator: TestClient) -> None:
     simulator.headers["X-Api-Key"] = "wrong"
     with pytest.raises(SourceUnavailable) as error:
         fetch_registry_info(simulator, "1655482318")
-    assert error.value.reason == "http_401"
+    assert (error.value.reason, error.value.http_status) == (UnavailableReason.request_rejected, 401)

@@ -4,6 +4,7 @@ from app.db.session import DbSession
 from app.errors import error_responses
 from app.schemas.actions import Dictionaries, DictionaryItem
 from app.schemas.application import InfoRequestItem
+from app.schemas.checks import UNAVAILABLE_REASON_LABELS
 from app.schemas.company import Company
 from app.schemas.enums import Collateral, InfoItemType, Purpose, RejectReason
 from app.schemas.product import Product, RecommendRequest, RecommendResponse
@@ -46,7 +47,7 @@ INFO_ITEMS = [
     "/me/company",
     response_model=Company,
     summary="Компания текущего клиента",
-    description="Реквизиты известны банку заранее - клиент их не вводит.",
+    description="Реквизиты известны банку заранее — клиент их не вводит.",
     responses=error_responses(401, 403, 404),
 )
 def my_company(user: ClientUser, db: DbSession) -> Company:
@@ -75,5 +76,6 @@ def dictionaries() -> Dictionaries:
         purposes=[DictionaryItem(code=k.value, label=v) for k, v in PURPOSE_LABELS.items()],
         collateral_types=[DictionaryItem(code=k.value, label=v) for k, v in COLLATERAL_LABELS.items()],
         reject_reasons=[DictionaryItem(code=k.value, label=v) for k, v in REJECT_REASON_LABELS.items()],
+        unavailable_reasons=[DictionaryItem(code=k.value, label=v) for k, v in UNAVAILABLE_REASON_LABELS.items()],
         info_items=INFO_ITEMS,
     )
