@@ -1,0 +1,1273 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Smart Credit LK — симулятор внешних источников",
+    "description": "\nЛокальные заменители внешних сервисов. Все данные синтетические.\n\n**Доступ:** заголовок `X-Api-Key` (переменная `MOCKS_API_KEY`) → кнопка *Authorize*.\n\n**Поведение источников** меняется через `PUT /admin/sources/{source}`:\n`normal` — ответ с задержкой, `error` — 503, `timeout` — зависание и 504.\n",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "Служебное"
+        ],
+        "summary": "Проверка работоспособности",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/egr/v1/extracts/{inn}": {
+      "get": {
+        "tags": [
+          "ЕГРЮЛ / ЕГРИП"
+        ],
+        "summary": "Выписка из ЕГРЮЛ (10-значный ИНН) или ЕГРИП (12-значный ИНН)",
+        "operationId": "extract_egr_v1_extracts__inn__get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "inn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{10}(\\d{2})?$",
+              "examples": [
+                "1655482318"
+              ],
+              "title": "Inn"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EgrExtract"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Сведения не найдены",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/nbki/v1/credit-reports": {
+      "post": {
+        "tags": [
+          "НБКИ"
+        ],
+        "summary": "Кредитный отчёт по ИНН",
+        "description": "Если кредитной истории нет, возвращается отчёт с historyFound=false — это результат, а не ошибка.",
+        "operationId": "credit_report_nbki_v1_credit_reports_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreditReportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditReport"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Неверный запрос",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Нет действующего согласия субъекта",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/pb/v1/companies/{inn}": {
+      "get": {
+        "tags": [
+          "ФНС «Прозрачный бизнес»"
+        ],
+        "summary": "Сведения о компании или ИП по ИНН",
+        "operationId": "company_pb_v1_companies__inn__get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "inn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{10}(\\d{2})?$",
+              "examples": [
+                "5406247181"
+              ],
+              "title": "Inn"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PbProfile"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Сведения не найдены",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/sources": {
+      "get": {
+        "tags": [
+          "Управление симулятором"
+        ],
+        "summary": "Текущее поведение источников",
+        "operationId": "sources_admin_sources_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/SourceBehavior"
+                  },
+                  "propertyNames": {
+                    "$ref": "#/components/schemas/Source"
+                  },
+                  "type": "object",
+                  "title": "Response Sources Admin Sources Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/admin/sources/{source}": {
+      "put": {
+        "tags": [
+          "Управление симулятором"
+        ],
+        "summary": "Изменить поведение источника",
+        "description": "Например, `{\"mode\": \"error\"}` — источник недоступен; `{\"mode\": \"normal\"}` — вернуть как было.",
+        "operationId": "update_source_admin_sources__source__put",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "source",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Source"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceBehaviorUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceBehavior"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/reset": {
+      "post": {
+        "tags": [
+          "Управление симулятором"
+        ],
+        "summary": "Сбросить поведение и журнал",
+        "operationId": "reset_admin_reset_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/admin/requests": {
+      "get": {
+        "tags": [
+          "Управление симулятором"
+        ],
+        "summary": "Последние запросы к источникам",
+        "operationId": "requests_admin_requests_get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JournalEntry"
+                  },
+                  "title": "Response Requests Admin Requests Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Consent": {
+        "properties": {
+          "given": {
+            "type": "boolean",
+            "title": "Given"
+          },
+          "given_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Given At"
+          },
+          "purpose": {
+            "type": "string",
+            "title": "Purpose",
+            "examples": [
+              "loan_application"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "given",
+          "given_at",
+          "purpose"
+        ],
+        "title": "Consent"
+      },
+      "CreditReport": {
+        "properties": {
+          "report_id": {
+            "type": "string",
+            "title": "Report Id"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At"
+          },
+          "inn": {
+            "type": "string",
+            "title": "Inn"
+          },
+          "history_found": {
+            "type": "boolean",
+            "title": "History Found",
+            "description": "false — кредитной истории в бюро нет; это результат, а не ошибка"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "history_length_months": {
+            "type": "integer",
+            "title": "History Length Months",
+            "default": 0
+          },
+          "loans": {
+            "items": {
+              "$ref": "#/components/schemas/Loan"
+            },
+            "type": "array",
+            "title": "Loans",
+            "default": []
+          },
+          "payment_discipline_24m": {
+            "$ref": "#/components/schemas/PaymentDiscipline",
+            "default": {
+              "overdue_1_29": 0,
+              "overdue_30_59": 0,
+              "overdue_60_89": 0,
+              "overdue_90_plus": 0
+            }
+          },
+          "inquiries_30d": {
+            "type": "integer",
+            "title": "Inquiries 30D",
+            "default": 0
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "report_id",
+          "generated_at",
+          "inn",
+          "history_found"
+        ],
+        "title": "CreditReport"
+      },
+      "CreditReportRequest": {
+        "properties": {
+          "inn": {
+            "type": "string",
+            "pattern": "^\\d{10}(\\d{2})?$",
+            "title": "Inn",
+            "examples": [
+              "1655482318"
+            ]
+          },
+          "subject_type": {
+            "type": "string",
+            "enum": [
+              "legal_entity",
+              "individual_entrepreneur"
+            ],
+            "title": "Subject Type"
+          },
+          "consent": {
+            "$ref": "#/components/schemas/Consent"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "inn",
+          "subject_type",
+          "consent"
+        ],
+        "title": "CreditReportRequest"
+      },
+      "EgrAddress": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "region": {
+            "type": "string",
+            "title": "Region"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "text",
+          "region"
+        ],
+        "title": "EgrAddress"
+      },
+      "EgrExtract": {
+        "properties": {
+          "registry": {
+            "type": "string",
+            "enum": [
+              "EGRUL",
+              "EGRIP"
+            ],
+            "title": "Registry"
+          },
+          "inn": {
+            "type": "string",
+            "pattern": "^\\d{10}(\\d{2})?$",
+            "title": "Inn"
+          },
+          "ogrn": {
+            "type": "string",
+            "title": "Ogrn"
+          },
+          "kpp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kpp"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "short_name": {
+            "type": "string",
+            "title": "Short Name"
+          },
+          "registration_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Registration Date"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EgrStatus"
+          },
+          "address": {
+            "$ref": "#/components/schemas/EgrAddress"
+          },
+          "head": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EgrHead"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Руководитель юрлица; для ИП — null"
+          },
+          "founders": {
+            "items": {
+              "$ref": "#/components/schemas/EgrFounder"
+            },
+            "type": "array",
+            "title": "Founders",
+            "default": []
+          },
+          "okved_main": {
+            "$ref": "#/components/schemas/Okved"
+          },
+          "okved_additional": {
+            "items": {
+              "$ref": "#/components/schemas/Okved"
+            },
+            "type": "array",
+            "title": "Okved Additional",
+            "default": []
+          },
+          "authorized_capital": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authorized Capital",
+            "description": "Уставный капитал, ₽; для ИП — null"
+          },
+          "registering_authority": {
+            "type": "string",
+            "title": "Registering Authority"
+          },
+          "request_id": {
+            "type": "string",
+            "title": "Request Id"
+          },
+          "extract_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Extract Date"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "registry",
+          "inn",
+          "ogrn",
+          "kpp",
+          "full_name",
+          "short_name",
+          "registration_date",
+          "status",
+          "address",
+          "head",
+          "okved_main",
+          "authorized_capital",
+          "registering_authority",
+          "request_id",
+          "extract_date"
+        ],
+        "title": "EgrExtract",
+        "description": "Выписка из реестра."
+      },
+      "EgrFounder": {
+        "properties": {
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "share_percent": {
+            "type": "number",
+            "maximum": 100.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Share Percent"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "full_name",
+          "share_percent"
+        ],
+        "title": "EgrFounder"
+      },
+      "EgrHead": {
+        "properties": {
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "position": {
+            "type": "string",
+            "title": "Position"
+          },
+          "inn": {
+            "type": "string",
+            "pattern": "^\\d{10}(\\d{2})?$",
+            "title": "Inn"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "full_name",
+          "position",
+          "inn"
+        ],
+        "title": "EgrHead"
+      },
+      "EgrStatus": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "active",
+              "liquidating",
+              "liquidated",
+              "reorganizing",
+              "bankrupt"
+            ],
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "changed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Changed At",
+            "description": "Дата изменения статуса"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "name"
+        ],
+        "title": "EgrStatus"
+      },
+      "ErrorBody": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorBody"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorBody"
+          }
+        },
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse"
+      },
+      "FinancialYear": {
+        "properties": {
+          "year": {
+            "type": "integer",
+            "title": "Year"
+          },
+          "revenue": {
+            "type": "integer",
+            "title": "Revenue"
+          },
+          "net_profit": {
+            "type": "integer",
+            "title": "Net Profit"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "year",
+          "revenue",
+          "net_profit"
+        ],
+        "title": "FinancialYear"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "JournalEntry": {
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "At"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "method": {
+            "type": "string",
+            "title": "Method"
+          },
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "status": {
+            "type": "integer",
+            "title": "Status"
+          },
+          "duration_ms": {
+            "type": "integer",
+            "title": "Duration Ms"
+          },
+          "request_id": {
+            "type": "string",
+            "title": "Request Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "at",
+          "source",
+          "method",
+          "path",
+          "status",
+          "duration_ms",
+          "request_id"
+        ],
+        "title": "JournalEntry"
+      },
+      "Loan": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "loan",
+              "credit_line",
+              "overdraft",
+              "credit_card",
+              "leasing"
+            ],
+            "title": "Type"
+          },
+          "creditor_type": {
+            "type": "string",
+            "enum": [
+              "bank",
+              "leasing_company",
+              "mfo"
+            ],
+            "title": "Creditor Type"
+          },
+          "opened_at": {
+            "type": "string",
+            "format": "date",
+            "title": "Opened At"
+          },
+          "closed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed At"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "balance": {
+            "type": "integer",
+            "title": "Balance",
+            "description": "Остаток долга, ₽"
+          },
+          "monthly_payment": {
+            "type": "integer",
+            "title": "Monthly Payment",
+            "description": "Ежемесячный платёж, ₽"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "closed"
+            ],
+            "title": "Status"
+          },
+          "current_overdue": {
+            "type": "integer",
+            "title": "Current Overdue",
+            "description": "Текущая просроченная задолженность, ₽",
+            "default": 0
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "type",
+          "creditor_type",
+          "opened_at",
+          "limit",
+          "balance",
+          "monthly_payment",
+          "status"
+        ],
+        "title": "Loan"
+      },
+      "Marker": {
+        "properties": {
+          "flag": {
+            "type": "boolean",
+            "title": "Flag"
+          },
+          "companies_count": {
+            "type": "integer",
+            "title": "Companies Count",
+            "description": "Сколько организаций связано с адресом или руководителем"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "flag",
+          "companies_count"
+        ],
+        "title": "Marker"
+      },
+      "Mode": {
+        "type": "string",
+        "enum": [
+          "normal",
+          "error",
+          "timeout"
+        ],
+        "title": "Mode"
+      },
+      "Okved": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "title"
+        ],
+        "title": "Okved"
+      },
+      "PaymentDiscipline": {
+        "properties": {
+          "overdue_1_29": {
+            "type": "integer",
+            "title": "Overdue 1 29",
+            "default": 0
+          },
+          "overdue_30_59": {
+            "type": "integer",
+            "title": "Overdue 30 59",
+            "default": 0
+          },
+          "overdue_60_89": {
+            "type": "integer",
+            "title": "Overdue 60 89",
+            "default": 0
+          },
+          "overdue_90_plus": {
+            "type": "integer",
+            "title": "Overdue 90 Plus",
+            "default": 0
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "PaymentDiscipline",
+        "description": "Число просрочек за 24 месяца по длительности."
+      },
+      "PbProfile": {
+        "properties": {
+          "inn": {
+            "type": "string",
+            "pattern": "^\\d{10}(\\d{2})?$",
+            "title": "Inn"
+          },
+          "tax_regime": {
+            "type": "string",
+            "enum": [
+              "ОСН",
+              "УСН",
+              "ПСН",
+              "ЕСХН",
+              "АУСН"
+            ],
+            "title": "Tax Regime"
+          },
+          "employees_avg": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employees Avg"
+          },
+          "mass_address": {
+            "$ref": "#/components/schemas/Marker"
+          },
+          "mass_head": {
+            "$ref": "#/components/schemas/Marker"
+          },
+          "disqualified_persons": {
+            "type": "boolean",
+            "title": "Disqualified Persons",
+            "description": "Есть дисквалифицированные лица в органах управления"
+          },
+          "unreliable_info": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "address",
+                "head",
+                "founder"
+              ]
+            },
+            "type": "array",
+            "title": "Unreliable Info",
+            "description": "Сведения, отмеченные в реестре как недостоверные"
+          },
+          "tax_arrears": {
+            "$ref": "#/components/schemas/TaxArrears"
+          },
+          "reporting_overdue": {
+            "type": "boolean",
+            "title": "Reporting Overdue",
+            "description": "Не представляет налоговую отчётность более года"
+          },
+          "financials": {
+            "items": {
+              "$ref": "#/components/schemas/FinancialYear"
+            },
+            "type": "array",
+            "title": "Financials",
+            "description": "Бухгалтерская отчётность; у ИП её нет"
+          },
+          "request_id": {
+            "type": "string",
+            "title": "Request Id"
+          },
+          "checked_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Checked At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "inn",
+          "tax_regime",
+          "employees_avg",
+          "mass_address",
+          "mass_head",
+          "disqualified_persons",
+          "unreliable_info",
+          "tax_arrears",
+          "reporting_overdue",
+          "financials",
+          "request_id",
+          "checked_at"
+        ],
+        "title": "PbProfile"
+      },
+      "Source": {
+        "type": "string",
+        "enum": [
+          "egr",
+          "nbki",
+          "pb"
+        ],
+        "title": "Source"
+      },
+      "SourceBehavior": {
+        "properties": {
+          "mode": {
+            "$ref": "#/components/schemas/Mode",
+            "default": "normal"
+          },
+          "latency_min_ms": {
+            "type": "integer",
+            "maximum": 60000.0,
+            "minimum": 0.0,
+            "title": "Latency Min Ms"
+          },
+          "latency_max_ms": {
+            "type": "integer",
+            "maximum": 60000.0,
+            "minimum": 0.0,
+            "title": "Latency Max Ms"
+          },
+          "failure_rate": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Failure Rate",
+            "description": "Доля случайных ответов 503"
+          }
+        },
+        "type": "object",
+        "required": [
+          "latency_min_ms",
+          "latency_max_ms",
+          "failure_rate"
+        ],
+        "title": "SourceBehavior"
+      },
+      "SourceBehaviorUpdate": {
+        "properties": {
+          "mode": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Mode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "latency_min_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latency Min Ms"
+          },
+          "latency_max_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latency Max Ms"
+          },
+          "failure_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Rate"
+          }
+        },
+        "type": "object",
+        "title": "SourceBehaviorUpdate",
+        "description": "Частичное изменение: передаются только меняемые поля."
+      },
+      "TaxArrears": {
+        "properties": {
+          "has_arrears": {
+            "type": "boolean",
+            "title": "Has Arrears"
+          },
+          "amount": {
+            "type": "integer",
+            "title": "Amount",
+            "default": 0
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "has_arrears"
+        ],
+        "title": "TaxArrears"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "APIKeyHeader": {
+        "type": "apiKey",
+        "description": "Ключ доступа (MOCKS_API_KEY)",
+        "in": "header",
+        "name": "X-Api-Key"
+      }
+    }
+  }
+}
