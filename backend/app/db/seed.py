@@ -22,6 +22,8 @@ from sqlalchemy import delete, func, select, text
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
+from app.db import models
+from app.db.session import SessionLocal
 from app.schemas.application import Contact, InfoRequestItem, ScoredFactor, ScoringInputs
 from app.schemas.base import CamelModel
 from app.schemas.company import Founder
@@ -41,21 +43,13 @@ from app.schemas.enums import (
     Role,
 )
 from app.services.finance import KEY_RATE, annuity_payment
+from app.services.enrichment import CHECK_TITLES
 from app.services.mappers import company_to_schema
 from app.services.requisites import is_valid_account, is_valid_inn, is_valid_ogrn
-from app.db import models
-from app.db.session import SessionLocal
 
 logger = logging.getLogger(__name__)
 
 BANK_BIK = "044525593"  # БИК банка — для проверки контрольного ключа расчётных счетов
-
-CHECK_TITLES = {
-    CheckSource.bank: "Обороты по счёту в банке",
-    CheckSource.egrul: "ЕГРЮЛ / ЕГРИП",
-    CheckSource.pb: "ФНС «Прозрачный бизнес»",
-    CheckSource.nbki: "Бюро кредитных историй",
-}
 
 
 # --- [Формат файлов data/seed] (строгая проверка)
