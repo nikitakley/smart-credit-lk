@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 from app.config import get_settings
 from app.integrations.http import parse_response, request_json
-from app.schemas.base import CamelModel
+from app.schemas.checks import RiskDetails
 
 SOURCE = "pb"
 
@@ -43,31 +43,16 @@ class _Profile(BaseModel):
     financials: list[_FinancialYear] = []
 
 
-# --- [Внутренний формат банка]
+# --- [Перевод во внутренний формат банка (app/schemas/checks.py)]
 
 
-class RiskProfile(CamelModel):
-    found: bool
-    tax_regime: str | None = None
-    employees: int | None = None
-    mass_address_companies: int | None = None  # заполнено, только если адрес массовый
-    mass_head_companies: int | None = None
-    disqualified_persons: bool = False
-    unreliable_info: list[str] = []  # по-русски: «адрес», «руководитель»
-    tax_arrears: int = 0
-    reporting_overdue: bool = False
-    report_year: int | None = None
-    revenue: int | None = None
-    net_profit: int | None = None
-
-
-def fetch_risk_profile(client: httpx.Client, inn: str) -> RiskProfile:
+def fetch_risk_profile(client: httpx.Client, inn: str) -> RiskDetails:
     data = request_json(client, SOURCE, "GET", f"{get_settings().pb_base_url}/v1/companies/{inn}")
     if data is None:
-        return RiskProfile(found=False)
+        return RiskDetails(found=False)
     profile = parse_response(SOURCE, _Profile, data)
     last_year = max(profile.financials, key=lambda f: f.year, default=None)
-    return RiskProfile(
+    return RiskDetails(
         found=True,
         tax_regime=profile.tax_regime,
         employees=profile.employees_avg,

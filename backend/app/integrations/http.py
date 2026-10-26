@@ -11,6 +11,7 @@ from fastapi import Depends
 from pydantic import BaseModel, ValidationError
 
 from app.config import get_settings
+from app.schemas.checks import UnavailableReason
 
 logger = logging.getLogger(__name__)
 
@@ -20,10 +21,11 @@ M = TypeVar("M", bound=BaseModel)
 class SourceUnavailable(Exception):
     """Источник не дал ответа: недоступен, не уложился во время или ответил ошибкой."""
 
-    def __init__(self, source: str, reason: str) -> None:
-        super().__init__(f"{source}: {reason}")
+    def __init__(self, source: str, reason: UnavailableReason, http_status: int | None = None) -> None:
+        super().__init__(f"{source}: {reason}" + (f" (HTTP {http_status})" if http_status else ""))
         self.source = source
-        self.reason = reason  # timeout | connection_error | http_503 | invalid_response ...
+        self.reason = reason
+        self.http_status = http_status
 
 
 def make_client() -> httpx.Client:
@@ -57,16 +59,16 @@ def request_json(
     attempts = settings.integration_retries + 1
     # Один идентификатор на все попытки: по нему запрос находится в логах банка и в журнале источника
     request_id = str(uuid.uuid4())
-    reason = "unknown"
+    reason, http_status = UnavailableReason.connection_error, None
 
     for attempt in range(1, attempts + 1):
         started = time.perf_counter()
         try:
             response = client.request(method, url, json=json, headers={"X-Request-Id": request_id})
         except httpx.TimeoutException:  # проверяется раньше TransportError: это его частный случай
-            reason = "timeout"
+            reason, http_status = UnavailableReason.timeout, None
         except httpx.TransportError:
-            reason = "connection_error"
+            reason, http_status = UnavailableReason.connection_error, None
         else:
             duration_ms = round((time.perf_counter() - started) * 1000)
             if response.status_code == 404:
@@ -78,20 +80,20 @@ def request_json(
                 try:
                     return response.json()
                 except ValueError as exc:
-                    raise SourceUnavailable(source, "invalid_response") from exc
-            reason = f"http_{response.status_code}"
-            if response.status_code < 500 and response.status_code != 429:
-                logger.error("%s %s → %d: %s, request_id=%s",
-                             source, url, response.status_code, response.text[:300], request_id)
-                raise SourceUnavailable(source, reason)
+                    raise SourceUnavailable(source, UnavailableReason.invalid_response, response.status_code) from exc
+            http_status = response.status_code
+            if http_status < 500 and http_status != 429:
+                logger.error("%s %s → %d: %s, request_id=%s", source, url, http_status, response.text[:300], request_id)
+                raise SourceUnavailable(source, UnavailableReason.request_rejected, http_status)
+            reason = UnavailableReason.server_error
 
-        logger.warning("%s: попытка %d из %d не удалась (%s), request_id=%s",
-                       source, attempt, attempts, reason, request_id)
+        logger.warning("%s: попытка %d из %d не удалась (%s%s), request_id=%s",
+                       source, attempt, attempts, reason, f", HTTP {http_status}" if http_status else "", request_id)
         if attempt < attempts:
             # Экспоненциальная пауза: 0.5 с, 1 с, 2 с... — не добиваем и без того перегруженный сервис
             time.sleep(settings.integration_backoff_seconds * 2 ** (attempt - 1))
 
-    raise SourceUnavailable(source, reason)
+    raise SourceUnavailable(source, reason, http_status)
 
 
 def parse_response(source: str, model: type[M], data: dict[str, Any]) -> M:
@@ -100,4 +102,4 @@ def parse_response(source: str, model: type[M], data: dict[str, Any]) -> M:
         return model.model_validate(data)
     except ValidationError as exc:
         logger.error("%s: неожиданный формат ответа: %s", source, exc.errors()[:3])
-        raise SourceUnavailable(source, "invalid_response") from exc
+        raise SourceUnavailable(source, UnavailableReason.invalid_response) from exc

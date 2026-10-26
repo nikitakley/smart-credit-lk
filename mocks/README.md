@@ -80,7 +80,7 @@ cd mocks
 uv sync
 uv run uvicorn simulator.main:app --port 8001 --reload
 uv run pytest                                  # тесты симулятора
-uv run python scripts/export_openapi.py        # → docs/api/mocks-openapi.json
+uv run python scripts/export_openapi.py        # → docs/api/mocks-openapi.json (проверяется тестом)
 ```
 
 ## Структура

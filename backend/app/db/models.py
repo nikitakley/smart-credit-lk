@@ -21,6 +21,7 @@ from typing import Any
 from sqlalchemy import BigInteger, ForeignKey, Index, Numeric, Sequence, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.db.base import Base, TimestampMixin, enum_column
 from app.schemas.enums import (
     Actor,
     ApplicationStatus,
@@ -31,20 +32,19 @@ from app.schemas.enums import (
     CompanyType,
     DecidedBy,
     DecisionOutcome,
+    EventKind,
     OfferType,
     Purpose,
     RejectReason,
     Role,
 )
-from app.db.base import Base, TimestampMixin, enum_column
 
-
-# Номера заявок: A-1000, A-1001, ...
-# Последовательность гарантирует уникальность даже при одновременном создании заявок несколькими экземплярами API.
+# Номера заявок: A-1000, A-1001, ... Последовательность гарантирует уникальность
+# даже при одновременном создании заявок несколькими экземплярами API.
 application_number_seq = Sequence("application_number_seq", start=1000, metadata=Base.metadata)
 
 
-# --- [Справочники и клиенты]
+# ---------- Справочники и клиенты ----------
 
 
 class Product(Base):
@@ -116,7 +116,7 @@ class Account(TimestampMixin, Base):
     company: Mapped[Company | None] = relationship()
 
 
-# --- [Заявка]
+# ---------- Заявка ----------
 
 
 class Application(TimestampMixin, Base):
@@ -171,13 +171,16 @@ class Application(TimestampMixin, Base):
 
 
 class ApplicationEvent(Base):
-    """Запись истории: какой статус, когда, кто перевёл. Только добавляется, не меняется."""
+    """Запись истории заявки: смена статуса или действие без смены статуса. Только добавляется, не меняется."""
 
     __tablename__ = "application_events"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     application_id: Mapped[str] = mapped_column(ForeignKey("applications.id", ondelete="CASCADE"), index=True)
-    status: Mapped[ApplicationStatus] = mapped_column(enum_column(ApplicationStatus))
+    kind: Mapped[EventKind] = mapped_column(
+        enum_column(EventKind), default=EventKind.status_changed, server_default=EventKind.status_changed.value
+    )
+    status: Mapped[ApplicationStatus] = mapped_column(enum_column(ApplicationStatus))  # статус после события
     actor: Mapped[Actor] = mapped_column(enum_column(Actor))
     actor_account_id: Mapped[str | None] = mapped_column(String(50))
     note: Mapped[str | None] = mapped_column(String(1000))

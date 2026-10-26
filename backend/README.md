@@ -77,6 +77,7 @@ uv run pytest tests/test_state_machine.py tests/test_requisites.py tests/test_in
 | `test_requisites.py` | контрольные суммы ИНН, ОГРН и расчётных счетов в синтетических данных |
 | `test_integrations.py` | адаптеры источников: повторы, таймауты, ошибки 4xx/5xx, неожиданный формат, ответы симулятора |
 | `test_enrichment.py` | правила оценки источников, согласованность демо-данных с симулятором, обновление проверок специалистом |
+| `test_openapi.py` | `docs/api/openapi.json` совпадает с кодом; все коды 409 описаны |
 
 ## Внешние источники
 
@@ -91,6 +92,22 @@ uv run pytest tests/test_state_machine.py tests/test_requisites.py tests/test_in
 
 Если источник не ответил, проверка получает статус `unavailable` — остальные данные сохраняются.
 Правила — функции `*_check` в `app/services/enrichment.py`: простые, без сети и базы, покрыты тестами.
+
+**Данные источника (`details`)** видит только аналитик. Формат — строгие модели из `app/schemas/checks.py`
+(в OpenAPI — `BankDetails`, `RegistryDetails`, `CreditHistoryDetails`, `RiskDetails`, `UnavailableDetails`),
+выбирается по `source`, а при `status = unavailable` — всегда `UnavailableDetails`. `null` — данных нет
+(демо-заявка, проверки ещё не обновлялись).
+
+Причина недоступности (`details.reason`) — закрытый список, подписи для интерфейса — в `GET /api/dictionaries`
+(`unavailableReasons`):
+
+| `reason` | Когда | Повторы |
+|---|---|---|
+| `timeout` | источник не ответил за `INTEGRATION_TIMEOUT_SECONDS` | да |
+| `connection_error` | не удалось подключиться | да |
+| `server_error` | 5xx или 429, код — в `details.httpStatus` | да |
+| `request_rejected` | 4xx: неверный ключ, формат, нет согласия; код — в `details.httpStatus` | нет |
+| `invalid_response` | ответ в неожиданном формате | нет |
 
 Как устроен вызов (`app/integrations/`):
 
@@ -113,7 +130,19 @@ uv run pytest tests/test_state_machine.py tests/test_requisites.py tests/test_in
 
 Сейчас обогащение запускает специалист: `POST /api/analyst/applications/{id}/checks/refresh`
 (статусы `enrichment`, `scoring`, `manual_review`, `docs_requested`; статус заявки не меняется).
-На этапе 4 тот же код будет вызывать конвейер.
+Действие записывается в историю заявки событием `kind = checks_refreshed` с перечнем источников,
+которые не ответили. На этапе 4 тот же код будет вызывать конвейер.
+
+### История заявки
+
+Каждое событие истории (`history[]`, таблица `application_events`) имеет вид `kind`:
+
+| `kind` | Что произошло | `status` события |
+|---|---|---|
+| `status_changed` | заявка перешла в новый статус — только через `transition()` в `state_machine.py` | новый статус |
+| `checks_refreshed` | данные из источников запрошены повторно — через `record_event()` | текущий статус, не меняется |
+
+Новые виды событий добавляются в `EventKind` (и миграцией — в CHECK-ограничение колонки `kind`).
 
 Показать отказоустойчивость на демо:
 
@@ -223,6 +252,10 @@ scripts/              # служебные скрипты (экспорт OpenAP
 ```bash
 uv run python scripts/export_openapi.py        # → docs/api/openapi.json
 ```
+
+Забытую выгрузку поймает тест `test_openapi_file_is_up_to_date`. Коды ошибок 409 перечислены в описании
+каждого эндпоинта; их полный список с пояснениями — `CONFLICT_CODES` в `app/errors.py`
+(новый код без описания не пройдёт тест `test_conflict_codes_are_documented`).
 
 ## Зависимости
 

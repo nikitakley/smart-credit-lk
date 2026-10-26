@@ -10,11 +10,9 @@ from fastapi.testclient import TestClient
 from app.config import get_settings
 from app.db.seed import SeedApplication, SeedCompany, read_seed
 from app.db.session import SessionLocal
-from app.integrations.egr import RegistryInfo
 from app.integrations.http import get_integration_client
-from app.integrations.nbki import CreditHistory
-from app.integrations.pb import RiskProfile
 from app.main import app
+from app.schemas.checks import CreditHistoryDetails, RegistryDetails, RiskDetails
 from app.schemas.enums import CheckSource, CheckStatus
 from app.services import enrichment
 from app.services.common import commit, load_application
@@ -66,41 +64,41 @@ def test_bank_check(bank: BankData | None, status: CheckStatus, summary: str) ->
 @pytest.mark.parametrize(
     ("info", "status"),
     [
-        (RegistryInfo(found=False), CheckStatus.fail),
-        (RegistryInfo(found=True, registry="egrul", status="liquidating", age_months=40), CheckStatus.fail),
-        (RegistryInfo(found=True, registry="egrul", status="bankrupt", age_months=40), CheckStatus.fail),
-        (RegistryInfo(found=True, registry="egrul", status="reorganizing", age_months=40), CheckStatus.warning),
-        (RegistryInfo(found=True, registry="egrip", status="active", age_months=2), CheckStatus.warning),
-        (RegistryInfo(found=True, registry="egrip", status="active", age_months=20), CheckStatus.ok),
+        (RegistryDetails(found=False), CheckStatus.fail),
+        (RegistryDetails(found=True, registry="egrul", status="liquidating", age_months=40), CheckStatus.fail),
+        (RegistryDetails(found=True, registry="egrul", status="bankrupt", age_months=40), CheckStatus.fail),
+        (RegistryDetails(found=True, registry="egrul", status="reorganizing", age_months=40), CheckStatus.warning),
+        (RegistryDetails(found=True, registry="egrip", status="active", age_months=2), CheckStatus.warning),
+        (RegistryDetails(found=True, registry="egrip", status="active", age_months=20), CheckStatus.ok),
     ],
 )
-def test_registry_check(info: RegistryInfo, status: CheckStatus) -> None:
+def test_registry_check(info: RegistryDetails, status: CheckStatus) -> None:
     assert enrichment.registry_check(info).status == status
 
 
 @pytest.mark.parametrize(
     ("history", "status"),
     [
-        (CreditHistory(report_id="r", history_found=False), CheckStatus.warning),
-        (CreditHistory(report_id="r", history_found=True, history_months=40, current_overdue=15_000), CheckStatus.fail),
-        (CreditHistory(report_id="r", history_found=True, history_months=40, overdues_90_plus=1), CheckStatus.fail),
-        (CreditHistory(report_id="r", history_found=True, history_months=40, overdues_30_to_89=2), CheckStatus.warning),
-        (CreditHistory(report_id="r", history_found=True, history_months=40, inquiries_last_month=7), CheckStatus.warning),
-        (CreditHistory(report_id="r", history_found=True, history_months=40, overdues_up_to_29=1), CheckStatus.ok),
+        (CreditHistoryDetails(report_id="r", history_found=False), CheckStatus.warning),
+        (CreditHistoryDetails(report_id="r", history_found=True, history_months=40, current_overdue=15_000), CheckStatus.fail),
+        (CreditHistoryDetails(report_id="r", history_found=True, history_months=40, overdues_90_plus=1), CheckStatus.fail),
+        (CreditHistoryDetails(report_id="r", history_found=True, history_months=40, overdues_30_to_89=2), CheckStatus.warning),
+        (CreditHistoryDetails(report_id="r", history_found=True, history_months=40, inquiries_last_month=7), CheckStatus.warning),
+        (CreditHistoryDetails(report_id="r", history_found=True, history_months=40, overdues_up_to_29=1), CheckStatus.ok),
     ],
 )
-def test_credit_history_check(history: CreditHistory, status: CheckStatus) -> None:
+def test_credit_history_check(history: CreditHistoryDetails, status: CheckStatus) -> None:
     assert enrichment.credit_history_check(history).status == status
 
 
 def test_risk_check_lists_every_signal() -> None:
-    result = enrichment.risk_check(RiskProfile(found=True, mass_head_companies=12, tax_arrears=5_000, reporting_overdue=True))
+    result = enrichment.risk_check(RiskDetails(found=True, mass_head_companies=12, tax_arrears=5_000, reporting_overdue=True))
     assert result.status == CheckStatus.warning
     assert result.summary == (
         "Руководитель указан в 12 компаниях (массовый руководитель); "
         "Задолженность по налогам — 5 000 ₽; Не сдаёт налоговую отчётность более года"
     )
-    assert enrichment.risk_check(RiskProfile(found=True, disqualified_persons=True)).status == CheckStatus.fail
+    assert enrichment.risk_check(RiskDetails(found=True, disqualified_persons=True)).status == CheckStatus.fail
 
 
 # --- [Демо-данные согласованы с источниками]
@@ -119,7 +117,7 @@ def test_outage_of_one_source_keeps_others(simulator: TestClient) -> None:
     simulator.put("/admin/sources/nbki", json={"mode": "error"})
     results = {r.source: r for r in collect_checks(simulator, enrichment_input(COMPANIES["7810624578"]))}
     assert results[CheckSource.nbki].status == CheckStatus.unavailable
-    assert results[CheckSource.nbki].details == {"reason": "http_503"}
+    assert results[CheckSource.nbki].details == {"reason": "server_error", "httpStatus": 503}
     assert {results[s].status for s in (CheckSource.bank, CheckSource.egrul, CheckSource.pb)} == {CheckStatus.ok}
 
 
@@ -150,6 +148,29 @@ def test_refresh_fills_checks_without_changing_status(api: TestClient, analyst: 
     nbki = next(c for c in after["checks"] if c["source"] == "nbki")
     assert nbki["details"]["monthlyPayments"] == 750_000
     assert after["updatedAt"] > before["updatedAt"]
+    # Действие специалиста — в истории, статус события прежний
+    event = after["history"][-1]
+    assert (event["kind"], event["status"], event["actor"]) == ("checks_refreshed", "enrichment", "analyst")
+    assert event["note"] == "Данные из внешних источников запрошены повторно"
+    assert all(e["kind"] == "status_changed" for e in after["history"][:-1])
+
+
+def test_demo_checks_without_data_have_null_details(api: TestClient, analyst: dict) -> None:
+    checks = api.get("/api/analyst/applications/A-1026", headers=analyst).json()["checks"]
+    assert checks and all(c["details"] is None for c in checks)
+
+
+def test_unavailable_source_in_card_and_history(api: TestClient, simulator: TestClient, analyst: dict) -> None:
+    simulator.put("/admin/sources/nbki", json={"mode": "error"})
+    card = refresh(api, "A-1025", analyst)
+    nbki = next(c for c in card["checks"] if c["source"] == "nbki")
+    assert nbki["status"] == "unavailable"
+    assert nbki["details"] == {"reason": "server_error", "httpStatus": 503}
+    assert nbki["summary"] == "Источник временно не ответил — банк запросит данные повторно"
+    assert card["history"][-1]["note"] == "Данные из внешних источников запрошены повторно; не ответили: Бюро кредитных историй"
+
+    reasons = {r["code"] for r in api.get("/api/dictionaries").json()["unavailableReasons"]}
+    assert reasons == {"timeout", "connection_error", "server_error", "request_rejected", "invalid_response"}
 
 
 def test_refresh_hides_details_from_client(api: TestClient, analyst: dict) -> None:

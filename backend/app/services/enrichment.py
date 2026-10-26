@@ -20,17 +20,28 @@ from decimal import Decimal
 from typing import Any
 
 import httpx2 as httpx
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.db import models
 from app.errors import conflict
-from app.integrations.egr import RegistryInfo, fetch_registry_info
+from app.integrations.egr import fetch_registry_info
 from app.integrations.http import SourceUnavailable
-from app.integrations.nbki import CreditHistory, fetch_credit_history
-from app.integrations.pb import RiskProfile, fetch_risk_profile
-from app.schemas.enums import ApplicationStatus, CheckSource, CheckStatus, CompanyType
+from app.integrations.nbki import fetch_credit_history
+from app.integrations.pb import fetch_risk_profile
+from app.schemas.checks import (
+    BankDetails,
+    CreditHistoryDetails,
+    RegistryDetails,
+    RiskDetails,
+    UnavailableDetails,
+    UnavailableReason,
+)
+from app.schemas.auth import User
+from app.schemas.enums import Actor, ApplicationStatus, CheckSource, CheckStatus, CompanyType, EventKind
 from app.services import analyst
 from app.services.common import commit, now
+from app.services.state_machine import record_event
 from app.services.text import plural, rub
 
 CHECK_TITLES = {
@@ -79,10 +90,9 @@ class EnrichmentInput:
     bank: BankData | None
 
 
-def _result(source: CheckSource, status: CheckStatus, summary: str, data: Any = None) -> CheckResult:
-    # details хранятся как есть и так же отдаются аналитику, поэтому сразу в формате API (camelCase)
-    details = data.model_dump(mode="json", by_alias=True) if data is not None else {}
-    return CheckResult(source, status, summary, details)
+def _result(source: CheckSource, status: CheckStatus, summary: str, data: BaseModel) -> CheckResult:
+    # details хранятся в формате API (camelCase); при выдаче читаются моделями из app/schemas/checks.py
+    return CheckResult(source, status, summary, data.model_dump(mode="json", by_alias=True))
 
 
 # --- [Правила оценки по источникам]
@@ -92,24 +102,24 @@ def bank_check(bank: BankData | None) -> CheckResult:
     source = CheckSource.bank
     if bank is None:
         return CheckResult(source, CheckStatus.warning, "Нет данных об оборотах по счёту в банке", {})
-    details = {
-        "monthlyRevenue": bank.monthly_revenue,
-        "revenueGrowth": float(bank.revenue_growth),
-        "historyMonths": bank.history_months,
-    }
+    details = BankDetails(
+        monthly_revenue=bank.monthly_revenue,
+        revenue_growth=float(bank.revenue_growth),
+        history_months=bank.history_months,
+    )
     growth = round(bank.revenue_growth)
     if bank.history_months < 6:
         months = bank.history_months
         summary = f"Обороты по счёту только за {months} {plural(months, MONTHS)} — недостаточно для оценки"
-        return CheckResult(source, CheckStatus.warning, summary, details)
+        return _result(source, CheckStatus.warning, summary, details)
     if growth <= -30:
-        return CheckResult(source, CheckStatus.warning, f"Обороты по счёту за 12 месяцев снизились на {-growth}%", details)
+        return _result(source, CheckStatus.warning, f"Обороты по счёту за 12 месяцев снизились на {-growth}%", details)
     if growth >= 10:
-        return CheckResult(source, CheckStatus.ok, f"Выручка за 12 месяцев выросла на {growth}%", details)
-    return CheckResult(source, CheckStatus.ok, "Обороты по счёту стабильны", details)
+        return _result(source, CheckStatus.ok, f"Выручка за 12 месяцев выросла на {growth}%", details)
+    return _result(source, CheckStatus.ok, "Обороты по счёту стабильны", details)
 
 
-def registry_check(info: RegistryInfo) -> CheckResult:
+def registry_check(info: RegistryDetails) -> CheckResult:
     source = CheckSource.egrul
     if not info.found:
         return _result(source, CheckStatus.fail, "Компания не найдена в ЕГРЮЛ / ЕГРИП", info)
@@ -131,7 +141,7 @@ def registry_check(info: RegistryInfo) -> CheckResult:
     return _result(source, CheckStatus.ok, "Компания действует", info)
 
 
-def credit_history_check(history: CreditHistory) -> CheckResult:
+def credit_history_check(history: CreditHistoryDetails) -> CheckResult:
     source = CheckSource.nbki
     if not history.history_found:
         return _result(source, CheckStatus.warning, "Кредитной истории в бюро нет", history)
@@ -156,7 +166,7 @@ def credit_history_check(history: CreditHistory) -> CheckResult:
     return _result(source, CheckStatus.ok, summary, history)
 
 
-def risk_check(profile: RiskProfile) -> CheckResult:
+def risk_check(profile: RiskDetails) -> CheckResult:
     source = CheckSource.pb
     if not profile.found:
         return _result(source, CheckStatus.warning, "Сведения в «Прозрачном бизнесе» не найдены", profile)
@@ -178,10 +188,11 @@ def risk_check(profile: RiskProfile) -> CheckResult:
     return _result(source, CheckStatus.ok, "Признаков риска не выявлено", profile)
 
 
-def unavailable_check(source: CheckSource, reason: str) -> CheckResult:
-    return CheckResult(
-        source, CheckStatus.unavailable, "Источник временно не ответил — данные будут запрошены повторно",
-        {"reason": reason},
+def unavailable_check(source: CheckSource, reason: UnavailableReason, http_status: int | None = None) -> CheckResult:
+    # Текст видит клиент: без технических подробностей и без обещаний конкретного срока
+    return _result(
+        source, CheckStatus.unavailable, "Источник временно не ответил — банк запросит данные повторно",
+        UnavailableDetails(reason=reason, http_status=http_status),
     )
 
 
@@ -206,7 +217,7 @@ def collect_checks(client: httpx.Client, data: EnrichmentInput) -> list[CheckRes
         try:
             results.append(future.result())
         except SourceUnavailable as exc:
-            results.append(unavailable_check(source, exc.reason))
+            results.append(unavailable_check(source, exc.reason, exc.http_status))
     return results
 
 
@@ -236,7 +247,14 @@ def save_checks(app: models.Application, results: list[CheckResult], fetched_at:
         check.fetched_at = fetched_at
 
 
-def refresh_checks(db: Session, application_id: str, client: httpx.Client) -> models.Application:
+def refresh_note(results: list[CheckResult]) -> str:
+    """Запись для истории: что сделано и какие источники не ответили."""
+    missing = [CHECK_TITLES[r.source] for r in results if r.status == CheckStatus.unavailable]
+    note = "Данные из внешних источников запрошены повторно"
+    return f"{note}; не ответили: {', '.join(missing)}" if missing else note
+
+
+def refresh_checks(db: Session, user: User, application_id: str, client: httpx.Client) -> models.Application:
     """Повторно запросить данные из источников по заявке (действие специалиста)."""
     app = analyst.get(db, application_id)
     if app.status not in REFRESH_ALLOWED:
@@ -253,6 +271,9 @@ def refresh_checks(db: Session, application_id: str, client: httpx.Client) -> mo
     if app.version != version:  # пока ждали источники, заявку изменили — не затираем чужие изменения
         raise conflict("concurrent_update", "Заявку только что изменили — обновите страницу и повторите действие")
     save_checks(app, results, now())
+    # Действие специалиста влияет на решение — фиксируем его в истории (аудит и таймлайн клиента)
+    record_event(app, EventKind.checks_refreshed, Actor.analyst, actor_account_id=user.account_id,
+                 note=refresh_note(results))
     app.updated_at = now()  # изменение самой заявки: увеличит version и сработает оптимистичная блокировка
     commit(db)
     return analyst.get(db, application_id)

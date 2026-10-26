@@ -1,4 +1,4 @@
-""""Справочники и перечисления, общие для API и бизнес-логики."""
+"""Справочники и перечисления, общие для API и бизнес-логики."""
 
 from enum import StrEnum
 
@@ -49,7 +49,6 @@ class ApplicationStatus(StrEnum):
     declined_by_client = "declined_by_client"  # клиент отказался от предложения
 
 
-# Группа статусов: заявка обрабатывается, фронт опрашивает сервер
 PROCESSING_STATUSES = {
     ApplicationStatus.submitted,
     ApplicationStatus.validation,
@@ -57,7 +56,6 @@ PROCESSING_STATUSES = {
     ApplicationStatus.scoring,
 }
 
-# Группа статусов: процесс завершен
 TERMINAL_STATUSES = {
     ApplicationStatus.rejected,
     ApplicationStatus.issued,
@@ -71,8 +69,13 @@ class Actor(StrEnum):
     analyst = "analyst"
 
 
+class EventKind(StrEnum):
+    status_changed = "status_changed"  # заявка перешла в новый статус
+    checks_refreshed = "checks_refreshed"  # данные из источников запрошены повторно; статус прежний
+
+
 class CheckSource(StrEnum):
-    bank = "bank"  # внутренние данные банка
+    bank = "bank"  # внутренние данные банка: обороты по счёту
     nbki = "nbki"  # бюро кредитных историй
     egrul = "egrul"  # ЕГРЮЛ / ЕГРИП
     pb = "pb"  # ФНС «Прозрачный бизнес»
@@ -97,6 +100,14 @@ class Weight(StrEnum):
     low = "low"
 
 
+class DecisionOutcome(StrEnum):
+    approved = "approved"
+    counter_offer = "counter_offer"
+    rejected = "rejected"
+    docs_requested = "docs_requested"
+    manual_review = "manual_review"
+
+
 class RejectReason(StrEnum):
     debt_load = "debt_load"  # высокая долговая нагрузка
     credit_history = "credit_history"  # негативная кредитная история
@@ -104,14 +115,6 @@ class RejectReason(StrEnum):
     insufficient_data = "insufficient_data"  # недостаточно данных для оценки
     risk_signals = "risk_signals"  # признаки повышенного риска
     other = "other"  # другая причина
-
-
-class DecisionOutcome(StrEnum):
-    approved = "approved"
-    counter_offer = "counter_offer"
-    rejected = "rejected"
-    docs_requested = "docs_requested"
-    manual_review = "manual_review"
 
 
 class DecidedBy(StrEnum):
@@ -128,7 +131,7 @@ class AnalystAction(StrEnum):
 
 class OfferType(StrEnum):
     approved = "approved"
-    counter_offer = "counter_offer"    
+    counter_offer = "counter_offer"
 
 
 class InfoItemType(StrEnum):
