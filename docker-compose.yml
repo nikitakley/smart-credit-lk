@@ -2,6 +2,22 @@
 # Значения по умолчанию подходят для локального запуска; переопределяются через .env (см. .env.example)
 name: smart-credit-lk
 
+# Общие настройки бэкенда: один образ используют два сервиса — migrate и api.
+# x-... — «заготовка» Compose; &backend даёт ей имя, <<: *backend подставляет её в сервис.
+x-backend: &backend
+  build: ./backend
+  image: smart-credit-lk-backend
+  environment:
+    ENVIRONMENT: ${ENVIRONMENT:-docker}
+    DEMO_MODE: ${DEMO_MODE:-true}
+    DEMO_SHOW_SIGN_CODE: ${DEMO_SHOW_SIGN_CODE:-true}
+    JWT_SECRET: ${JWT_SECRET:-docker-dev-secret-code-0123456789abcdef}
+    JWT_TTL_MINUTES: ${JWT_TTL_MINUTES:-480}
+    DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-credit}:${POSTGRES_PASSWORD:-credit}@postgres:5432/${POSTGRES_DB:-credit}
+  volumes:
+    # Справочники и демо-данные — только для чтения
+    - ./data/seed:/app/data/seed:ro
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -12,25 +28,36 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-credit}
     volumes:
       - pgdata:/var/lib/postgresql/data
+    # Порт открыт только для этого компьютера (127.0.0.1) — чтобы локальный uvicorn
+    # и инструменты разработчика видели базу. Из сети база недоступна.
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 3s
       retries: 10
 
+  # Разовая подготовка базы: миграции схемы, затем справочники и демо-заявки.
+  # Отрабатывает и завершается (статус Exited (0) — это норма). Повторный запуск безопасен:
+  # применённые миграции пропускаются, справочники обновляются, существующие заявки не трогаются.
+  migrate:
+    <<: *backend
+    command: ["sh", "-c", "alembic upgrade head && python -m app.db.seed"]
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   api:
-    build: ./backend
+    <<: *backend
     restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
-    environment:
-      ENVIRONMENT: ${ENVIRONMENT:-docker}
-      DEMO_MODE: ${DEMO_MODE:-true}
-      DEMO_SHOW_SIGN_CODE: ${DEMO_SHOW_SIGN_CODE:-true}
-      JWT_SECRET: ${JWT_SECRET:-docker-dev-secret-change-me-0123456789abcdef}
-      JWT_TTL_MINUTES: ${JWT_TTL_MINUTES:-480}
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-credit}:${POSTGRES_PASSWORD:-credit}@postgres:5432/${POSTGRES_DB:-credit}
+      # API стартует только после успешной подготовки базы
+      migrate:
+        condition: service_completed_successfully
     ports:
       - "${API_PORT:-8000}:8000"
     healthcheck:

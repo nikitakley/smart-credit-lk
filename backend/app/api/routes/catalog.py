@@ -1,14 +1,16 @@
 from fastapi import APIRouter
 
-from app.schemas.enums import Collateral, InfoItemType, Purpose, RejectReason
-from app.schemas.company import Company
-from app.schemas.product import Product, RecommendRequest, RecommendResponse
-from app.schemas.application import InfoRequestItem
+from app.db.session import DbSession
+from app.errors import error_responses
 from app.schemas.actions import Dictionaries, DictionaryItem
-from app.errors import error_responses, not_found
+from app.schemas.application import InfoRequestItem
+from app.schemas.company import Company
+from app.schemas.enums import Collateral, InfoItemType, Purpose, RejectReason
+from app.schemas.product import Product, RecommendRequest, RecommendResponse
 from app.security import ClientUser
+from app.services import applications as service
 from app.services.assistant import recommend
-from app.stubs.data import COMPANIES, PRODUCTS
+from app.services.mappers import company_to_schema, product_to_schema
 
 router = APIRouter(tags=["Компания, продукты, справочники"])
 
@@ -47,16 +49,13 @@ INFO_ITEMS = [
     description="Реквизиты известны банку заранее - клиент их не вводит.",
     responses=error_responses(401, 403, 404),
 )
-def my_company(user: ClientUser) -> Company:
-    company = COMPANIES.get(user.inn or "")
-    if company is None:
-        raise not_found("company", "Компания не найдена")
-    return company
+def my_company(user: ClientUser, db: DbSession) -> Company:
+    return company_to_schema(service.get_company(db, user.inn))
 
 
 @router.get("/products", response_model=list[Product], summary="Каталог кредитных продуктов")
-def products() -> list[Product]:
-    return PRODUCTS
+def products(db: DbSession) -> list[Product]:
+    return [product_to_schema(p) for p in service.list_products(db)]
 
 
 @router.post(
@@ -66,8 +65,8 @@ def products() -> list[Product]:
     description="Правила подбора без ИИ: порядок зависит от цели, продукты вне лимитов по сумме отсеиваются.",
     responses=error_responses(422),
 )
-def assistant_recommend(body: RecommendRequest) -> RecommendResponse:
-    return recommend(body, PRODUCTS)
+def assistant_recommend(body: RecommendRequest, db: DbSession) -> RecommendResponse:
+    return recommend(body, [product_to_schema(p) for p in service.list_products(db)])
 
 
 @router.get("/dictionaries", response_model=Dictionaries, summary="Справочники")

@@ -1,0 +1,260 @@
+[
+  {
+    "id": "A-1020",
+    "companyInn": "1655482318",
+    "productId": "overdraft",
+    "amount": 500000,
+    "termMonths": 6,
+    "purpose": "cash_gap",
+    "collateral": "none",
+    "status": "draft",
+    "createdMinutesAgo": 30
+  },
+  {
+    "id": "A-1021",
+    "companyInn": "6671034827",
+    "productId": "working-capital",
+    "amount": 3000000,
+    "termMonths": 24,
+    "purpose": "working_capital",
+    "collateral": "none",
+    "status": "rejected",
+    "createdMinutesAgo": 4320,
+    "events": [
+      {"status": "submitted", "actor": "client", "afterSeconds": 0, "note": "Заявка отправлена в банк"},
+      {"status": "validation", "actor": "system", "afterSeconds": 5, "note": "Проверяем полноту и корректность данных"},
+      {"status": "enrichment", "actor": "system", "afterSeconds": 10, "note": "Запрашиваем данные в БКИ, ЕГРЮЛ и «Прозрачном бизнесе»"},
+      {"status": "rejected", "actor": "system", "afterSeconds": 15, "note": "По данным ЕГРЮЛ компания ликвидирована"}
+    ],
+    "checks": [
+      {"source": "bank", "status": "warning", "summary": "Обороты по счёту за 12 месяцев снизились на 62%"},
+      {"source": "egrul", "status": "fail", "summary": "Компания ликвидирована"}
+    ],
+    "scoring": {
+      "score": 0,
+      "minScore": 450,
+      "inputs": {"monthlyRevenue": 350000, "revenueGrowth": -62, "loanPayments": 0, "overdues24m": 0,
+                 "ageMonths": 133, "dtiNow": 0, "dtiWithRequested": 0, "affordable": 0},
+      "factors": [
+        {"code": "company_status", "label": "Компания ликвидирована", "detail": "По данным ЕГРЮЛ деятельность прекращена",
+         "impact": "negative", "weight": "high", "points": -1000}
+      ],
+      "riskPremium": null,
+      "recommendation": {"outcome": "rejected", "text": "Отказ: стоп-фактор — компания ликвидирована"},
+      "explanation": "Кредит выдаётся только действующим компаниям. По данным ЕГРЮЛ деятельность ООО «Уралстройинвест» прекращена.",
+      "improvements": []
+    },
+    "decision": {"outcome": "rejected", "decidedBy": "system", "reasonCode": "company_inactive", "afterSeconds": 15,
+                 "commentForClient": "Банк не может выдать кредит: по данным ЕГРЮЛ компания ликвидирована", "followedSystem": true}
+  },
+  {
+    "id": "A-1022",
+    "companyInn": "7810624578",
+    "productId": "investment",
+    "amount": 5000000,
+    "termMonths": 36,
+    "purpose": "equipment",
+    "collateral": "none",
+    "status": "approved",
+    "createdMinutesAgo": 1560,
+    "events": [
+      {"status": "submitted", "actor": "client", "afterSeconds": 0, "note": "Заявка отправлена в банк"},
+      {"status": "validation", "actor": "system", "afterSeconds": 5, "note": "Проверяем полноту и корректность данных"},
+      {"status": "enrichment", "actor": "system", "afterSeconds": 10, "note": "Запрашиваем данные в БКИ, ЕГРЮЛ и «Прозрачном бизнесе»"},
+      {"status": "scoring", "actor": "system", "afterSeconds": 20, "note": "Оцениваем финансовое положение"},
+      {"status": "approved", "actor": "system", "afterSeconds": 30, "note": "Одобрено на запрошенных условиях"}
+    ],
+    "checks": [
+      {"source": "bank", "status": "ok", "summary": "Выручка за 12 месяцев выросла на 25%"},
+      {"source": "egrul", "status": "ok", "summary": "Компания действует"},
+      {"source": "pb", "status": "ok", "summary": "Признаков риска не выявлено"},
+      {"source": "nbki", "status": "ok", "summary": "Просрочек за 24 месяца нет"}
+    ],
+    "scoring": {
+      "score": 880,
+      "minScore": 450,
+      "inputs": {"monthlyRevenue": 4200000, "revenueGrowth": 25, "loanPayments": 750000, "overdues24m": 0,
+                 "ageMonths": 103, "dtiNow": 18, "dtiWithRequested": 22, "affordable": 20000000},
+      "factors": [
+        {"code": "revenue_trend", "label": "Растущая выручка", "detail": "Выручка за 12 месяцев выросла на 25%",
+         "impact": "positive", "weight": "high", "points": 120},
+        {"code": "debt_load", "label": "Низкая долговая нагрузка", "detail": "Платежи по кредитам с новым займом — 22% выручки (лимит 50%)",
+         "impact": "positive", "weight": "medium", "points": 60},
+        {"code": "credit_history", "label": "Нет просрочек", "detail": "Кредитная история без просрочек за 2 года",
+         "impact": "positive", "weight": "medium", "points": 80},
+        {"code": "business_age", "label": "Бизнес работает больше 5 лет", "detail": "8 лет 7 месяцев",
+         "impact": "positive", "weight": "medium", "points": 60}
+      ],
+      "riskPremium": 0,
+      "recommendation": {"outcome": "approved", "amount": 5000000, "termMonths": 36, "text": "Одобрить на запрошенных условиях"},
+      "explanation": "Выручка растёт, долговая нагрузка низкая, просрочек нет — банк одобрил кредит на запрошенных условиях.",
+      "improvements": []
+    },
+    "decision": {"outcome": "approved", "approvedAmount": 5000000, "decidedBy": "system", "afterSeconds": 30, "followedSystem": true},
+    "offer": {"type": "approved", "amount": 5000000, "termMonths": 36, "riskPremium": 0, "validDays": 7}
+  },
+  {
+    "id": "A-1023",
+    "companyInn": "504718329642",
+    "productId": "working-capital",
+    "amount": 1500000,
+    "termMonths": 18,
+    "purpose": "working_capital",
+    "collateral": "none",
+    "status": "docs_requested",
+    "createdMinutesAgo": 300,
+    "events": [
+      {"status": "submitted", "actor": "client", "afterSeconds": 0, "note": "Заявка отправлена в банк"},
+      {"status": "validation", "actor": "system", "afterSeconds": 5, "note": "Проверяем полноту и корректность данных"},
+      {"status": "enrichment", "actor": "system", "afterSeconds": 10, "note": "Запрашиваем данные в БКИ, ЕГРЮЛ и «Прозрачном бизнесе»"},
+      {"status": "scoring", "actor": "system", "afterSeconds": 20, "note": "Оцениваем финансовое положение"},
+      {"status": "docs_requested", "actor": "system", "afterSeconds": 30, "note": "Счёт в банке открыт недавно — подтвердите выручку"}
+    ],
+    "checks": [
+      {"source": "bank", "status": "warning", "summary": "Обороты по счёту только за 4 месяца — недостаточно для оценки"},
+      {"source": "egrul", "status": "ok", "summary": "Предприниматель зарегистрирован, деятельность ведётся"},
+      {"source": "pb", "status": "ok", "summary": "Признаков риска не выявлено"},
+      {"source": "nbki", "status": "ok", "summary": "Кредитная история короткая, просрочек нет"}
+    ],
+    "scoring": {
+      "score": 470,
+      "minScore": 450,
+      "inputs": {"monthlyRevenue": 380000, "revenueGrowth": 0, "loanPayments": 0, "overdues24m": 0,
+                 "ageMonths": 20, "dtiNow": 0, "dtiWithRequested": 27, "affordable": 2100000},
+      "factors": [
+        {"code": "insufficient_history", "label": "Мало данных об оборотах", "detail": "Обороты по счёту в банке только за 4 месяца",
+         "impact": "negative", "weight": "high", "points": -100},
+        {"code": "business_age", "label": "Молодой бизнес", "detail": "1 год 8 месяцев",
+         "impact": "negative", "weight": "low", "points": -40},
+        {"code": "credit_history", "label": "Нет просрочек", "detail": "Кредитная история без просрочек",
+         "impact": "positive", "weight": "medium", "points": 50}
+      ],
+      "riskPremium": 2.5,
+      "recommendation": {"outcome": "docs_requested", "text": "Недостаточно данных о выручке — запросить подтверждение"},
+      "explanation": "Счёт в нашем банке открыт недавно, оборотов недостаточно, чтобы надёжно оценить выручку.",
+      "improvements": ["Подтвердить выручку за последние 6 месяцев", "Перевести основные обороты на счёт в банке"]
+    },
+    "infoRequest": {
+      "requestedBy": "system",
+      "afterSeconds": 30,
+      "comment": "Счёт в нашем банке открыт недавно, оборотов недостаточно для оценки. Укажите выручку за последние 6 месяцев и банк, где ведутся основные обороты.",
+      "items": [
+        {"code": "monthly_revenue_confirm", "label": "Среднемесячная выручка за 6 месяцев, ₽", "type": "number", "required": true},
+        {"code": "main_bank", "label": "Банк, где ведутся основные обороты", "type": "text", "required": true}
+      ]
+    }
+  },
+  {
+    "id": "A-1024",
+    "companyInn": "1655482318",
+    "productId": "working-capital",
+    "amount": 2000000,
+    "termMonths": 24,
+    "purpose": "working_capital",
+    "collateral": "none",
+    "status": "counter_offer",
+    "createdMinutesAgo": 120,
+    "events": [
+      {"status": "submitted", "actor": "client", "afterSeconds": 0, "note": "Заявка отправлена в банк"},
+      {"status": "validation", "actor": "system", "afterSeconds": 5, "note": "Проверяем полноту и корректность данных"},
+      {"status": "enrichment", "actor": "system", "afterSeconds": 10, "note": "Запрашиваем данные в БКИ, ЕГРЮЛ и «Прозрачном бизнесе»"},
+      {"status": "scoring", "actor": "system", "afterSeconds": 20, "note": "Оцениваем финансовое положение"},
+      {"status": "counter_offer", "actor": "system", "afterSeconds": 30, "note": "Сумма снижена из-за долговой нагрузки"}
+    ],
+    "checks": [
+      {"source": "bank", "status": "ok", "summary": "Выручка за 12 месяцев выросла на 18%"},
+      {"source": "egrul", "status": "ok", "summary": "Компания действует"},
+      {"source": "pb", "status": "ok", "summary": "Признаков риска не выявлено"},
+      {"source": "nbki", "status": "ok", "summary": "Просрочек нет, платежи по кредитам — 720 000 ₽ в месяц"}
+    ],
+    "scoring": {
+      "score": 680,
+      "minScore": 450,
+      "inputs": {"monthlyRevenue": 1600000, "revenueGrowth": 18, "loanPayments": 720000, "overdues24m": 0,
+                 "ageMonths": 28, "dtiNow": 45, "dtiWithRequested": 51, "affordable": 1500000},
+      "factors": [
+        {"code": "revenue_trend", "label": "Растущая выручка", "detail": "Выручка за 12 месяцев выросла на 18%",
+         "impact": "positive", "weight": "high", "points": 120},
+        {"code": "debt_load", "label": "Высокая долговая нагрузка", "detail": "Платежи по текущим кредитам — 45% выручки (лимит 50%)",
+         "impact": "negative", "weight": "medium", "points": -80},
+        {"code": "credit_history", "label": "Нет просрочек", "detail": "Кредитная история без просрочек за 2 года",
+         "impact": "positive", "weight": "medium", "points": 80},
+        {"code": "business_age", "label": "Срок работы бизнеса", "detail": "2 года 4 месяца",
+         "impact": "neutral", "weight": "low", "points": 0}
+      ],
+      "riskPremium": 1,
+      "recommendation": {"outcome": "counter_offer", "amount": 1500000, "termMonths": 24,
+                         "text": "Контрпредложение: 1 500 000 ₽ вместо 2 000 000 ₽. С запрошенной суммой платежи по кредитам заняли бы 51% выручки при лимите 50%."},
+      "explanation": "Сумму снизили до 1 500 000 ₽: с 2 000 000 ₽ платежи по всем кредитам заняли бы 51% выручки при лимите 50%. Выручка растёт и просрочек нет, поэтому банк готов выдать кредит на меньшую сумму.",
+      "improvements": ["Погасить часть текущих кредитов: лимит нагрузки — 50% выручки",
+                       "Добавить залог или поручительство",
+                       "Перевести обороты на счёт в банке — банк увидит выручку точнее"]
+    },
+    "decision": {"outcome": "counter_offer", "approvedAmount": 1500000, "decidedBy": "system", "afterSeconds": 30,
+                 "commentForClient": "Сумма снижена из-за долговой нагрузки", "followedSystem": true},
+    "offer": {"type": "counter_offer", "amount": 1500000, "termMonths": 24, "riskPremium": 1, "validDays": 7}
+  },
+  {
+    "id": "A-1025",
+    "companyInn": "5406247181",
+    "productId": "working-capital",
+    "amount": 4000000,
+    "termMonths": 24,
+    "purpose": "working_capital",
+    "collateral": "none",
+    "status": "manual_review",
+    "createdMinutesAgo": 60,
+    "events": [
+      {"status": "submitted", "actor": "client", "afterSeconds": 0, "note": "Заявка отправлена в банк"},
+      {"status": "validation", "actor": "system", "afterSeconds": 5, "note": "Проверяем полноту и корректность данных"},
+      {"status": "enrichment", "actor": "system", "afterSeconds": 10, "note": "Запрашиваем данные в БКИ, ЕГРЮЛ и «Прозрачном бизнесе»"},
+      {"status": "scoring", "actor": "system", "afterSeconds": 20, "note": "Оцениваем финансовое положение"},
+      {"status": "manual_review", "actor": "system", "afterSeconds": 30, "note": "Заявку рассматривает специалист банка"}
+    ],
+    "checks": [
+      {"source": "bank", "status": "ok", "summary": "Обороты по счёту стабильны"},
+      {"source": "egrul", "status": "ok", "summary": "Компания действует"},
+      {"source": "pb", "status": "warning", "summary": "Адрес регистрации указан у 54 компаний (массовый адрес)"},
+      {"source": "nbki", "status": "ok", "summary": "Просрочек за 24 месяца нет"}
+    ],
+    "scoring": {
+      "score": 540,
+      "minScore": 450,
+      "inputs": {"monthlyRevenue": 2800000, "revenueGrowth": 4, "loanPayments": 860000, "overdues24m": 0,
+                 "ageMonths": 59, "dtiNow": 31, "dtiWithRequested": 38, "affordable": 5500000},
+      "factors": [
+        {"code": "mass_address", "label": "Массовый адрес регистрации", "detail": "По этому адресу зарегистрированы 54 компании",
+         "impact": "negative", "weight": "high", "points": -100},
+        {"code": "debt_load", "label": "Умеренная долговая нагрузка", "detail": "Платежи по кредитам с новым займом — 38% выручки (лимит 50%)",
+         "impact": "neutral", "weight": "low", "points": 0},
+        {"code": "credit_history", "label": "Нет просрочек", "detail": "Кредитная история без просрочек за 2 года",
+         "impact": "positive", "weight": "medium", "points": 80}
+      ],
+      "riskPremium": 2.5,
+      "recommendation": {"outcome": "manual_review", "amount": 4000000, "termMonths": 24,
+                         "text": "Финансовые показатели позволяют одобрить, но есть признак риска — массовый адрес. Нужна проверка специалистом."},
+      "explanation": null,
+      "improvements": []
+    }
+  },
+  {
+    "id": "A-1026",
+    "companyInn": "7810624578",
+    "productId": "overdraft",
+    "amount": 1000000,
+    "termMonths": 12,
+    "purpose": "cash_gap",
+    "collateral": "none",
+    "status": "enrichment",
+    "createdMinutesAgo": 1,
+    "events": [
+      {"status": "submitted", "actor": "client", "afterSeconds": 0, "note": "Заявка отправлена в банк"},
+      {"status": "validation", "actor": "system", "afterSeconds": 5, "note": "Проверяем полноту и корректность данных"},
+      {"status": "enrichment", "actor": "system", "afterSeconds": 10, "note": "Запрашиваем данные в БКИ, ЕГРЮЛ и «Прозрачном бизнесе»"}
+    ],
+    "checks": [
+      {"source": "bank", "status": "ok", "summary": "Обороты по счёту стабильны"},
+      {"source": "egrul", "status": "ok", "summary": "Компания действует"}
+    ]
+  }
+]

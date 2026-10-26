@@ -7,7 +7,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     UV_COMPILE_BYTECODE=1 \
     UV_PYTHON_DOWNLOADS=never \
     UV_PROJECT_ENVIRONMENT=/opt/venv \
-    PATH="/opt/venv/bin:$PATH"
+    PATH="/opt/venv/bin:$PATH" \
+    SEED_DIR=/app/data/seed
 
 # Менеджер пакетов фиксированной версии
 RUN pip install --no-cache-dir uv==0.11.32
@@ -18,7 +19,9 @@ WORKDIR /app
 COPY pyproject.toml uv.lock .python-version ./
 RUN uv sync --frozen --no-dev --no-install-project
 
-# Затем код приложения
+# Затем миграции и код приложения (сиды подключаются томом из data/seed, см. docker-compose.yml)
+COPY alembic.ini ./
+COPY migrations ./migrations
 COPY app ./app
 
 # Запуск от непривилегированного пользователя

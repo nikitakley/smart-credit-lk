@@ -4,9 +4,12 @@ version = "0.1.0"
 description = "Бэкенд умного кредитного кабинета: API, кредитный конвейер, скоринг"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "alembic>=1.20.1",
     "fastapi>=0.161.1",
+    "psycopg[binary]>=3.3.6",
     "pydantic-settings>=2.16.1",
     "pyjwt>=2.15.1",
+    "sqlalchemy>=2.1.6",
     "uvicorn[standard]>=0.54.0",
 ]
 

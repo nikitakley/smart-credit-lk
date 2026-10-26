@@ -14,13 +14,16 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 DESCRIPTION = """
 API цифрового кредитного конвейера для малого и микробизнеса.
 
-**Авторизация:**: `POST /api/auth/login` → кнопка [Authorize] → вставить `accessToken`.
+**Авторизация:** `POST /api/auth/login` → кнопка *Authorize* → вставить `accessToken`.
 
 **Формат ошибок:** `{"error": {"code", "message", "fields": [{"field", "code", "message"}]}}`.
 
-**Статусы заявки:** `draft → submitted → validation → enrichment → scoring → [approved | counter_offer | manual_review | docs_requested | rejected] → signing → issued` (или `declined_by_client`).
+**Статусы заявки:** `draft → submitted → validation → enrichment → scoring →`
+`approved | counter_offer | manual_review | docs_requested | rejected →`
+`signing → issued` (или `declined_by_client`).
 
-> *Этап 1:* ответы формируются заглушками в памяти, конвейер обработки не запущен.
+> Данные хранятся в PostgreSQL. Конвейер обработки заявок подключается на следующих этапах:
+> отправленная заявка пока остаётся в статусе `submitted`.
 """
 
 

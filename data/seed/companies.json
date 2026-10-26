@@ -1,0 +1,107 @@
+[
+  {
+    "inn": "1655482318",
+    "type": "legal",
+    "status": "active",
+    "name": "ООО «Продмаркет»",
+    "fullName": "Общество с ограниченной ответственностью «Продмаркет»",
+    "ogrn": "1241600057126",
+    "kpp": "165501001",
+    "registeredAt": "2024-06-11",
+    "director": "Гарипов Рустам Ильдарович",
+    "directorTitle": "Генеральный директор",
+    "founders": [
+      {"name": "Гарипов Рустам Ильдарович", "sharePercent": 60},
+      {"name": "Сафина Алсу Ринатовна", "sharePercent": 40}
+    ],
+    "okved": {"code": "47.11", "title": "Торговля розничная преимущественно пищевыми продуктами в неспециализированных магазинах"},
+    "legalAddress": "420107, Республика Татарстан, г. Казань, ул. Спартаковская, д. 88, пом. 14",
+    "phone": "+7 (843) 000-27-14",
+    "email": "finance@prodmarket.example",
+    "account": "40702810562000014827",
+    "bankProfile": {"monthlyRevenue": 1600000, "revenueGrowth": 18, "historyMonths": 26}
+  },
+  {
+    "inn": "7810624578",
+    "type": "legal",
+    "status": "active",
+    "name": "ООО «Вектор Софт»",
+    "fullName": "Общество с ограниченной ответственностью «Вектор Софт»",
+    "ogrn": "1187847036519",
+    "kpp": "781001001",
+    "registeredAt": "2018-03-05",
+    "director": "Белова Анна Сергеевна",
+    "directorTitle": "Генеральный директор",
+    "founders": [
+      {"name": "Белова Анна Сергеевна", "sharePercent": 51},
+      {"name": "Орлов Максим Викторович", "sharePercent": 49}
+    ],
+    "okved": {"code": "62.01", "title": "Разработка компьютерного программного обеспечения"},
+    "legalAddress": "196084, г. Санкт-Петербург, Московский пр-кт, д. 97, лит. А, оф. 412",
+    "phone": "+7 (812) 000-41-90",
+    "email": "cfo@vektorsoft.example",
+    "account": "40702810632000003195",
+    "bankProfile": {"monthlyRevenue": 4200000, "revenueGrowth": 25, "historyMonths": 84}
+  },
+  {
+    "inn": "504718329642",
+    "type": "ip",
+    "status": "active",
+    "name": "ИП Сидоров Пётр Алексеевич",
+    "fullName": "Индивидуальный предприниматель Сидоров Пётр Алексеевич",
+    "ogrn": "325500000128746",
+    "kpp": null,
+    "registeredAt": "2025-02-17",
+    "director": "Сидоров Пётр Алексеевич",
+    "directorTitle": "Индивидуальный предприниматель",
+    "founders": [],
+    "okved": {"code": "56.10", "title": "Деятельность ресторанов и услуги по доставке продуктов питания"},
+    "legalAddress": "141407, Московская обл., г. Химки, ул. Московская, д. 21, кв. 56",
+    "phone": "+7 (495) 000-63-18",
+    "email": "sidorov.cafe@mail.example",
+    "account": "40802810840000008361",
+    "bankProfile": {"monthlyRevenue": 380000, "revenueGrowth": 0, "historyMonths": 4}
+  },
+  {
+    "inn": "6671034827",
+    "type": "legal",
+    "status": "liquidated",
+    "name": "ООО «Уралстройинвест»",
+    "fullName": "Общество с ограниченной ответственностью «Уралстройинвест»",
+    "ogrn": "1156674012384",
+    "kpp": "667101001",
+    "registeredAt": "2015-09-01",
+    "director": "Кузнецов Олег Викторович",
+    "directorTitle": "Ликвидатор",
+    "founders": [
+      {"name": "Кузнецов Олег Викторович", "sharePercent": 100}
+    ],
+    "okved": {"code": "41.20", "title": "Строительство жилых и нежилых зданий"},
+    "legalAddress": "620075, Свердловская обл., г. Екатеринбург, ул. Малышева, д. 51, оф. 1203",
+    "phone": "+7 (343) 000-75-02",
+    "email": "office@uralstroyinvest.example",
+    "account": "40702810616000002549",
+    "bankProfile": {"monthlyRevenue": 350000, "revenueGrowth": -62, "historyMonths": 60}
+  },
+  {
+    "inn": "5406247181",
+    "type": "legal",
+    "status": "active",
+    "name": "ООО «СибТоргКомплект»",
+    "fullName": "Общество с ограниченной ответственностью «СибТоргКомплект»",
+    "ogrn": "1215400015379",
+    "kpp": "540601001",
+    "registeredAt": "2021-11-23",
+    "director": "Морозов Дмитрий Андреевич",
+    "directorTitle": "Генеральный директор",
+    "founders": [
+      {"name": "Морозов Дмитрий Андреевич", "sharePercent": 100}
+    ],
+    "okved": {"code": "46.90", "title": "Торговля оптовая неспециализированная"},
+    "legalAddress": "630099, Новосибирская обл., г. Новосибирск, ул. Советская, д. 5, оф. 301",
+    "phone": "+7 (383) 000-58-46",
+    "email": "buh@sibtorgkomplekt.example",
+    "account": "40702810144000009713",
+    "bankProfile": {"monthlyRevenue": 2800000, "revenueGrowth": 4, "historyMonths": 48}
+  }
+]

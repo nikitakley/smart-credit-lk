@@ -1,4 +1,4 @@
-"""Проверки контракта API на заглушках этапа 1."""
+"""Проверки контракта API: ответы, коды ошибок и сквозные сценарии на PostgreSQL."""
 
 from fastapi.testclient import TestClient
 
@@ -6,7 +6,9 @@ from tests.conftest import login
 
 
 def test_health(client: TestClient) -> None:
-    assert client.get("/api/health").json()["status"] == "ok"
+    response = client.get("/api/health")
+    assert response.status_code == 200
+    assert response.json()["database"] == "ok"
 
 
 def test_protected_endpoint_requires_token(client: TestClient) -> None:

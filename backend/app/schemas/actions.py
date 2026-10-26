@@ -19,15 +19,19 @@ class SignCodeResponse(CamelModel):
 
 
 class SignRequest(CamelModel):
-    code: str = Field(pattern=r"^\d{6}$")
+    code: str = Field(pattern=r"^\d{6}$", examples=["123456"])
 
 
 class AnalystDecisionRequest(CamelModel):
     action: AnalystAction
-    amount: int | None = Field(default=None, gt=0, description="Сумма для counter_offer")
-    comment_for_client: str | None = Field(default=None, description="Обязателен для всех действий, кроме approve")
+    amount: int | None = Field(default=None, gt=0, description="Сумма для counter_offer", examples=[3000000])
+    comment_for_client: str | None = Field(
+        default=None, 
+        description="Обязателен для всех действий, кроме approve", 
+        examples=["Снизили сумму из-за признаков риска"],
+    )
     reason_code: RejectReason | None = Field(default=None, description="Причина отказа из справочника, для reject")
-    info_items: list[InfoRequestItem] | None = Field(default=None, descriprion="Что запросить у клиента, для request_docs")
+    info_items: list[InfoRequestItem] | None = Field(default=None, description="Что запросить у клиента, для request_docs")
 
 
 class DictionaryItem(CamelModel):
@@ -36,7 +40,7 @@ class DictionaryItem(CamelModel):
 
 
 class Dictionaries(CamelModel):
-    purpose: list[DictionaryItem]
+    purposes: list[DictionaryItem]
     collateral_types: list[DictionaryItem]
     reject_reasons: list[DictionaryItem]
     info_items: list[InfoRequestItem] = Field(description="Типовые запросы дополнительной информации")

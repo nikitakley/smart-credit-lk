@@ -28,9 +28,9 @@ from app.schemas.company import Company, CompanyShort
 
 
 class Contact(CamelModel):
-    name: str = Field(min_length=1)
-    phone: str = Field(pattern=r"^\+?[\d\s()-]{10,}$")
-    email: str = Field(pattern=r"^\S+@\S+\.\S+$")
+    name: str = Field(min_length=1, examples=["Иванов Иван Иванович"])
+    phone: str = Field(pattern=r"^\+?[\d\s()-]{10,}$", examples=["+7 (843) 000-27-14"])
+    email: str = Field(pattern=r"^\S+@\S+\.\S+$", examples=["finance@prodmarket.example"])
 
 
 class Consents(CamelModel):
@@ -41,11 +41,11 @@ class Consents(CamelModel):
 class ApplicationCreate(CamelModel):
     """Создание черновика. Поля необязательны - мастер заполняет их по шагам."""
 
-    product_id: str | None = None
-    amount: int | None = Field(default=None, gt=0)
-    term_months: int | None = Field(default=None, gt=0, le=120)
-    purpose: Purpose | None = None
-    collateral: Collateral | None = None
+    product_id: str | None = Field(default=None, examples=["working-capital"])
+    amount: int | None = Field(default=None, gt=0, examples=[1500000])
+    term_months: int | None = Field(default=None, gt=0, le=120, examples=[24])
+    purpose: Purpose | None = Field(default=None, examples=[Purpose.working_capital])
+    collateral: Collateral | None = Field(default=None, examples=[Collateral.none])
     contact: Contact | None = None
 
 
@@ -58,8 +58,8 @@ class SubmitRequest(CamelModel):
 
 
 class InfoAnswer(CamelModel):
-    code: str
-    value: str
+    code: str = Field(examples=["monthly_revenue_confirm"])
+    value: str = Field(examples=["900000"])
 
 
 class InfoResponseRequest(CamelModel):
