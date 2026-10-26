@@ -34,6 +34,15 @@ function stats(apps) {
 export default function Queue() {
   const { data: apps, error } = useLoad(() => listApplications(), [], { pollMs: 15000 });
   const [filter, setFilter] = useState('all');
+  const [resetting, setResetting] = useState(false);
+  const [resetError, setResetError] = useState(null);
+
+  // После сброса очередь перечитается сама: успешный POST вызывает перезагрузку данных (useLoad)
+  const reset = async () => {
+    setResetting(true);
+    setResetError(null);
+    try { await resetDemo(); } catch (err) { setResetError(err.message); } finally { setResetting(false); }
+  };
   const active = FILTERS.find((f) => f.key === filter);
   const shown = (apps ?? []).filter(active.test);
 
@@ -88,7 +97,8 @@ export default function Queue() {
         {apps && shown.length === 0 && <p className="muted">В этом фильтре заявок нет.</p>}
 
         <div className="row" style={{ marginTop: 'var(--space-6)' }}>
-          <Button variant="secondary" size="s" onClick={resetDemo}>Сбросить демо-данные</Button>
+          <Button variant="secondary" size="s" disabled={resetting} onClick={reset}>{resetting ? 'Сбрасываем…' : 'Сбросить демо-данные'}</Button>
+          {resetError && <p className="m0 caveat">{resetError}</p>}
         </div>
       </section>
     </Page>

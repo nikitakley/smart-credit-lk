@@ -29,6 +29,8 @@ export function clearSession() {
 // Сообщить экранам, что данные изменились (useLoad перезапросит)
 export const notifyChange = () => window.dispatchEvent(new Event(CHANGE_EVENT));
 
+const UNAVAILABLE = 'Сервис временно недоступен, попробуйте позже';
+
 export async function request(method, path, { body, headers } = {}) {
   const session = readSession();
   let res;
@@ -43,7 +45,7 @@ export async function request(method, path, { body, headers } = {}) {
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
   } catch {
-    throw new ApiError(0, 'network_error', 'Сервер недоступен. Проверьте, что бэкенд запущен.');
+    throw new ApiError(0, 'network_error', UNAVAILABLE);
   }
 
   const data = res.status === 204 ? null : await res.json().catch(() => null);
@@ -54,8 +56,12 @@ export async function request(method, path, { body, headers } = {}) {
       clearSession();
       window.location.assign('/login');
     }
+    // 409 — состояние заявки на сервере изменилось: экраны перечитывают данные, текст ошибки показывают как есть
+    if (res.status === 409) notifyChange();
     const e = data?.error;
-    throw new ApiError(res.status, e?.code ?? 'http_error', e?.message ?? `Ошибка сервера (${res.status})`, e?.fields ?? []);
+    if (res.status >= 500) throw new ApiError(res.status, e?.code ?? 'server_error', UNAVAILABLE);
+    if (res.status === 403) throw new ApiError(403, e?.code ?? 'forbidden', 'Недостаточно прав');
+    throw new ApiError(res.status, e?.code ?? 'http_error', e?.message ?? `Ошибка запроса (${res.status})`, e?.fields ?? []);
   }
 
   if (method !== 'GET') notifyChange();

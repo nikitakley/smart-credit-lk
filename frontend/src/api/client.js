@@ -30,46 +30,14 @@ export const getMyCompany = () => request('GET', '/me/company');
 export const getProducts = () => request('GET', '/products');
 export const recommend = (input) => request('POST', '/assistant/recommend', { body: input });
 
-// ВРЕМЕННО: копия справочников из backend/app/api/routes/catalog.py. GET /api/dictionaries
-// сейчас отвечает 500 (в роуте поле purposes, в схеме purpose). Убрать после исправления на бэке.
-const DICTIONARIES_FALLBACK = {
-  purposes: [
-    { code: 'working_capital', label: 'Пополнение оборотных средств' },
-    { code: 'cash_gap', label: 'Кассовый разрыв' },
-    { code: 'equipment', label: 'Покупка оборудования' },
-    { code: 'renovation', label: 'Ремонт и развитие' },
-    { code: 'refinancing', label: 'Рефинансирование' },
-  ],
-  collateralTypes: [
-    { code: 'real_estate', label: 'Недвижимость' },
-    { code: 'equipment', label: 'Оборудование' },
-    { code: 'none', label: 'Без залога' },
-  ],
-  rejectReasons: [
-    { code: 'debt_load', label: 'Высокая долговая нагрузка' },
-    { code: 'credit_history', label: 'Негативная кредитная история' },
-    { code: 'company_inactive', label: 'Компания не действует' },
-    { code: 'insufficient_data', label: 'Недостаточно данных для оценки' },
-    { code: 'risk_signals', label: 'Признаки повышенного риска' },
-    { code: 'other', label: 'Другая причина' },
-  ],
-  infoItems: [
-    { code: 'monthly_revenue_confirm', label: 'Среднемесячная выручка за 6 месяцев, ₽', type: 'number', required: true },
-    { code: 'main_bank', label: 'Банк, где ведутся основные обороты', type: 'text', required: true },
-    { code: 'purpose_details', label: 'Подробнее о цели кредита', type: 'text', required: true },
-    { code: 'actual_address', label: 'Фактический адрес ведения бизнеса', type: 'text', required: true },
-  ],
-};
-
-// Справочники не меняются за сессию — запрашиваем один раз на вкладку
+// Справочники не меняются за сессию — запрашиваем один раз на вкладку.
+// При ошибке кеш сбрасывается, чтобы следующий экран запросил их заново.
 let dictionaries;
 export function getDictionaries() {
-  dictionaries ??= request('GET', '/dictionaries')
-    .then((d) => ({ ...d, purposes: d.purposes ?? d.purpose }))
-    .catch((err) => {
-      console.warn('GET /api/dictionaries недоступен, используем локальную копию справочников', err);
-      return DICTIONARIES_FALLBACK;
-    });
+  dictionaries ??= request('GET', '/dictionaries').catch((err) => {
+    dictionaries = undefined;
+    throw err;
+  });
   return dictionaries;
 }
 
@@ -100,6 +68,8 @@ export const signContract = (id, code) => request('POST', `/applications/${id}/s
 export const listApplications = (status) =>
   request('GET', `/analyst/applications${status ? `?status=${encodeURIComponent(status)}` : ''}`);
 export const getAnalystApplication = (id) => request('GET', `/analyst/applications/${id}`);
+// Повторный запрос ЕГРЮЛ/ЕГРИП, НБКИ и «Прозрачного бизнеса»; статус не меняется, ответ — обновлённая карточка
+export const refreshChecks = (id) => request('POST', `/analyst/applications/${id}/checks/refresh`);
 // { action, amount?, commentForClient?, reasonCode?, infoItems? }
 export const decide = (id, body) => request('POST', `/analyst/applications/${id}/decision`, { body });
 

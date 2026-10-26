@@ -4,16 +4,17 @@ import AiHint from '../../components/AiHint.jsx';
 import { StatusBadge } from '../../components/Badge.jsx';
 import Button from '../../components/Button.jsx';
 import Card from '../../components/Card.jsx';
+import ChecksList from '../../components/ChecksList.jsx';
 import FactorList from '../../components/FactorList.jsx';
 import Field from '../../components/Field.jsx';
+import LoadError from '../../components/LoadError.jsx';
 import Page from '../../components/Page.jsx';
 import RingGauge from '../../components/art/RingGauge.jsx';
-import { decide, fieldErrors, getAnalystApplication, getDictionaries } from '../../api/client.js';
-import { useLoad } from '../../api/useLoad.js';
-import { ACTORS, ANALYST_DECIDES, STATUS } from '../../config/statuses.js';
+import { decide, fieldErrors, getAnalystApplication, getDictionaries, refreshChecks } from '../../api/client.js';
+import { useApplication, useLoad } from '../../api/useLoad.js';
+import { ACTORS, ANALYST_DECIDES, CHECKS_REFRESH, STATUS } from '../../config/statuses.js';
 import { decisionHeadline } from '../../lib/decision.js';
 import { formatAge, formatDate, formatDateTime, formatPercent, formatRub } from '../../lib/format.js';
-import { ChecksList } from '../client/ApplicationStatus.jsx';
 
 const ACTIONS = [
   { key: 'approve', label: 'Одобрить' },
@@ -142,13 +143,51 @@ function DecisionForm({ app, dicts }) {
   );
 }
 
+// Проверки по источникам и повторный запрос данных. Запрос идёт 1–1,5 с, при зависшем источнике — до ~10 с
+function ChecksCard({ app, dicts, onRefreshed }) {
+  const [busy, setBusy] = useState(false);
+  const [refreshError, setRefreshError] = useState(null);
+  const canRefresh = CHECKS_REFRESH.includes(app.status);
+  if (!app.checks?.length && !canRefresh) return null;
+
+  const refresh = async () => {
+    setBusy(true);
+    setRefreshError(null);
+    try {
+      onRefreshed(await refreshChecks(app.id));
+    } catch (err) {
+      setRefreshError(err.message); // 409 — карточка перечитается сама
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card className="stack">
+      <div className="toolbar">
+        <h2>Проверки</h2>
+        {canRefresh && (
+          <Button variant="secondary" size="s" disabled={busy} aria-busy={busy} onClick={refresh}>
+            {busy ? 'Запрашиваем источники…' : 'Обновить данные из источников'}
+          </Button>
+        )}
+      </div>
+      {busy && <p className="muted small m0" role="status">Запрашиваем ЕГРЮЛ, НБКИ и «Прозрачный бизнес». Если источник не отвечает, это может занять до 10 секунд.</p>}
+      {refreshError && <p className="m0 caveat">{refreshError}</p>}
+      {app.checks?.length > 0
+        ? <ChecksList checks={app.checks} withDetails unavailableReasons={dicts?.unavailableReasons} />
+        : <p className="muted m0">Данные из источников ещё не запрашивались.</p>}
+    </Card>
+  );
+}
+
 export default function ApplicationCard() {
   const { id } = useParams();
-  const { data: app, error } = useLoad(() => getAnalystApplication(id), [id], { pollMs: 15000 });
+  const { data: app, error, mutate } = useApplication(() => getAnalystApplication(id), [id]);
   const { data: dicts } = useLoad(getDictionaries, []);
 
   const back = <Link to="/analyst" className="hero__back">← Очередь заявок</Link>;
-  if (error) return <Page eyebrow={back} title="Заявка не найдена" subtitle={error.message} />;
+  if (error) return <LoadError error={error} eyebrow={back} backTo="/analyst" backLabel="К очереди заявок" />;
   if (!app) return <Page eyebrow={back} title={`Заявка № ${id}`} subtitle="Загружаем заявку…" />;
 
   const c = app.company;
@@ -183,12 +222,7 @@ export default function ApplicationCard() {
             </dl>
           </Card>
 
-          {app.checks?.length > 0 && (
-            <Card className="stack">
-              <h2>Проверки</h2>
-              <ChecksList checks={app.checks} />
-            </Card>
-          )}
+          <ChecksCard app={app} dicts={dicts} onRefreshed={mutate} />
 
           <Card className="stack">
             <div className="toolbar">
@@ -223,7 +257,12 @@ export default function ApplicationCard() {
               {app.history.map((h, i) => (
                 <li key={i}>
                   <span className="muted small">{formatDateTime(h.at)}</span>
-                  <span>{STATUS[h.status]?.label ?? h.status} · {ACTORS[h.actor] ?? h.actor}{h.note && <span className="muted"> — {h.note}</span>}</span>
+                  {h.kind && h.kind !== 'status_changed' ? (
+                    // Событие без смены статуса (например, повторный запрос данных) — отметка, статус не дублируем
+                    <span><span aria-hidden="true">↻ </span>{h.note ?? 'Событие'} · {ACTORS[h.actor] ?? h.actor}</span>
+                  ) : (
+                    <span>{STATUS[h.status]?.label ?? h.status} · {ACTORS[h.actor] ?? h.actor}{h.note && <span className="muted"> — {h.note}</span>}</span>
+                  )}
                 </li>
               ))}
             </ul>

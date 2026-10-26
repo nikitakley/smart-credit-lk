@@ -27,7 +27,7 @@ export default function ApplicationWizard() {
   const navigate = useNavigate();
   const { data: company, error: companyError } = useLoad(getMyCompany, []);
   const { data: products } = useLoad(getProducts, []);
-  const { data: dicts } = useLoad(getDictionaries, []);
+  const { data: dicts, error: dictsError } = useLoad(getDictionaries, []);
 
   const [draftId, setDraftId] = useState(params.get('draft'));
   const [step, setStep] = useState(0);
@@ -97,6 +97,7 @@ export default function ApplicationWizard() {
 
   // Ошибка сервера: поля → подсказки у полей, клиента возвращаем на шаг с первой ошибкой
   const showServerError = (err) => {
+    if (err.code === 'not_draft' && draftId) { navigate(`/applications/${draftId}`, { replace: true }); return; }
     const f = fieldErrors(err);
     const mapped = {
       amount: f.amount ?? f.termMonths ?? f.productId ?? f.purpose,
@@ -163,6 +164,7 @@ export default function ApplicationWizard() {
       <div className="columns">
         <Card className="stack">
           {formError && <p className="m0 caveat"><span aria-hidden="true">! </span>{formError}</p>}
+          {dictsError && step === 2 && <p className="m0 caveat"><span aria-hidden="true">! </span>Не удалось загрузить цели и виды залога: {dictsError.message}</p>}
 
           {step === 0 && (
             <>

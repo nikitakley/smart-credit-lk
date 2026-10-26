@@ -4,10 +4,11 @@ import AiHint from '../../components/AiHint.jsx';
 import Button from '../../components/Button.jsx';
 import Card from '../../components/Card.jsx';
 import Field from '../../components/Field.jsx';
+import LoadError from '../../components/LoadError.jsx';
 import Page from '../../components/Page.jsx';
 import ArtDocument from '../../components/art/ArtDocument.jsx';
 import { getApplication, requestSignCode, signContract } from '../../api/client.js';
-import { useLoad } from '../../api/useLoad.js';
+import { useApplication } from '../../api/useLoad.js';
 import { formatMonths, formatPercent, formatRub } from '../../lib/format.js';
 
 const formatTime = (iso) => new Date(iso).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
@@ -17,14 +18,14 @@ const formatTime = (iso) => new Date(iso).toLocaleTimeString('ru-RU', { hour: '2
 export default function SignContract() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data: app, error } = useLoad(() => getApplication(id), [id]);
+  const { data: app, error } = useApplication(() => getApplication(id), [id]);
   const [agree, setAgree] = useState(false);
   const [sent, setSent] = useState(null);
   const [code, setCode] = useState('');
   const [codeError, setCodeError] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  if (error) return <Page title="Заявка не найдена" subtitle={error.message} />;
+  if (error) return <LoadError error={error} backTo="/applications" backLabel="К моим заявкам" />;
   if (!app) return <Page title="Подписание договора" subtitle="Загружаем договор…" />;
 
   if (app.status !== 'signing') {

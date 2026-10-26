@@ -4,18 +4,24 @@ React 19 + Vite, без TypeScript и UI-библиотек. Данные — т
 
 ## Запуск
 
-1. Поднимите бэкенд на :8000 — см. корневой README (`uv run uvicorn app.main:app --reload` или `docker compose up --build`).
-2. В папке `frontend`:
+Весь проект одной командой из корня репозитория — фронтенд на http://localhost:8080, API на :8000
+(подробности в `backend/README.md`):
 
 ```bash
-npm install
+docker compose up --build -d
+```
+
+Для разработки с горячей перезагрузкой — dev-сервер Vite поверх того же бэкенда, в папке `frontend`:
+
+```bash
+npm ci
 npm run dev
 ```
 
-Откройте http://localhost:5173. Vite проксирует `/api` на `http://localhost:8000`; другой адрес — через переменную `API_TARGET`:
+Откройте http://localhost:5173. Vite проксирует `/api` на `http://localhost:8000`; другой адрес бэкенда — через переменную `API_TARGET`:
 
 ```bash
-API_TARGET=http://localhost:8080 npm run dev
+API_TARGET=http://localhost:9000 npm run dev
 ```
 
 Сборка: `npm run build`, просмотр сборки: `npm run preview` (прокси тот же).
@@ -50,8 +56,9 @@ docker build -t smart-credit-frontend ./frontend
 
 ## Устройство
 
-- `src/api/http.js` — запросы, токен в `sessionStorage` (своя сессия на вкладку), ошибки `{error:{code,message,fields}}` → `ApiError`; при 401 — на `/login`.
-- `src/api/client.js` — все эндпоинты. Справочники запрашиваются один раз; если `GET /api/dictionaries` недоступен, берётся локальная копия `DICTIONARIES_FALLBACK`.
-- `src/api/useLoad.js` — загрузка с перезапросом после любых изменений и опросом (`pollMs`) на страницах статуса и очереди.
-- `src/config/statuses.js` — подписи статусов и шаги таймлайна.
+- `src/api/http.js` — запросы, токен в `sessionStorage` (своя сессия на вкладку), ошибки `{error:{code,message,fields}}` → `ApiError`; при 401 — на `/login`, при 409 — перечитывание данных, 5xx и обрыв сети — «Сервис временно недоступен».
+- `src/api/client.js` — все эндпоинты. Справочники запрашиваются один раз на вкладку.
+- `src/api/useLoad.js` — загрузка с перезапросом после любых изменений; `useApplication` опрашивает заявку с интервалом по статусу (`applicationPollMs` в `src/config/statuses.js`).
+- `src/components/ChecksList.jsx` — проверки банка; у аналитика — блок «Подробнее» с `details`.
+- `src/config/statuses.js` — подписи статусов, шаги таймлайна и интервалы опроса.
 - `src/styles/tokens.css` — дизайн-токены.

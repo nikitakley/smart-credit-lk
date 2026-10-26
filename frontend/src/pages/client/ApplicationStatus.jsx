@@ -1,37 +1,19 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import Badge, { StatusBadge } from '../../components/Badge.jsx';
+import { StatusBadge } from '../../components/Badge.jsx';
 import Button from '../../components/Button.jsx';
 import Card from '../../components/Card.jsx';
+import ChecksList from '../../components/ChecksList.jsx';
 import Field from '../../components/Field.jsx';
+import LoadError from '../../components/LoadError.jsx';
 import Page from '../../components/Page.jsx';
 import StatusTimeline from '../../components/StatusTimeline.jsx';
 import RingGauge from '../../components/art/RingGauge.jsx';
 import { fieldErrors, getApplication, respondInfo } from '../../api/client.js';
-import { useLoad } from '../../api/useLoad.js';
+import { useApplication } from '../../api/useLoad.js';
 import { IN_PROGRESS, buildTimeline } from '../../config/statuses.js';
 import { decisionHeadline } from '../../lib/decision.js';
 import { formatDateTime, formatRub } from '../../lib/format.js';
-
-// Результаты проверок банка (ApplicationClient.checks)
-export const CHECK_TONE = { ok: 'success', warning: 'warning', fail: 'error', unavailable: 'info' };
-const CHECK_LABEL = { ok: 'В порядке', warning: 'Есть замечания', fail: 'Не пройдена', unavailable: 'Нет данных' };
-
-export function ChecksList({ checks }) {
-  return (
-    <ul className="checks">
-      {checks.map((c) => (
-        <li key={c.source} className="check-row">
-          <div className="check-row__text">
-            <b>{c.title}</b>
-            <span className="small muted">{c.summary}</span>
-          </div>
-          <Badge tone={CHECK_TONE[c.status] ?? 'info'}>{CHECK_LABEL[c.status] ?? c.status}</Badge>
-        </li>
-      ))}
-    </ul>
-  );
-}
 
 // Ответ на запрос дополнительной информации (статус docs_requested)
 function InfoRequestForm({ app }) {
@@ -84,9 +66,9 @@ function InfoRequestForm({ app }) {
 export default function ApplicationStatus() {
   const { id } = useParams();
   // Опрос раз в 10 секунд — клиент видит решение аналитика без перезагрузки
-  const { data: app, error } = useLoad(() => getApplication(id), [id], { pollMs: 10000 });
+  const { data: app, error } = useApplication(() => getApplication(id), [id]);
 
-  if (error) return <Page title="Заявка не найдена" subtitle={error.message} />;
+  if (error) return <LoadError error={error} backTo="/applications" backLabel="К моим заявкам" />;
   if (!app) return <Page title={`Заявка № ${id}`} subtitle="Загружаем заявку…" />;
 
   const history = app.history ?? [];
