@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Smart Credit LK API",
-    "description": "\nAPI цифрового кредитного конвейера для малого и микробизнеса.\n\n**Авторизация:**: `POST /api/auth/login` → кнопка [Authorize] → вставить `accessToken`.\n\n**Формат ошибок:** `{\"error\": {\"code\", \"message\", \"fields\": [{\"field\", \"code\", \"message\"}]}}`.\n\n**Статусы заявки:** `draft → submitted → validation → enrichment → scoring → [approved | counter_offer | manual_review | docs_requested | rejected] → signing → issued` (или `declined_by_client`).\n\n> *Этап 1:* ответы формируются заглушками в памяти, конвейер обработки не запущен.\n",
+    "description": "\nAPI цифрового кредитного конвейера для малого и микробизнеса.\n\n**Авторизация:** `POST /api/auth/login` → кнопка *Authorize* → вставить `accessToken`.\n\n**Формат ошибок:** `{\"error\": {\"code\", \"message\", \"fields\": [{\"field\", \"code\", \"message\"}]}}`.\n\n**Статусы заявки:** `draft → submitted → validation → enrichment → scoring →`\n`approved | counter_offer | manual_review | docs_requested | rejected →`\n`signing → issued` (или `declined_by_client`).\n\n> Данные хранятся в PostgreSQL. Конвейер обработки заявок подключается на следующих этапах:\n> отправленная заявка пока остаётся в статусе `submitted`.\n",
     "version": "0.1.0"
   },
   "paths": {
@@ -12,10 +12,21 @@
           "Служебное"
         ],
         "summary": "Проверка работоспособности",
+        "description": "200 - сервис и база доступны; 503 - база недоступна. Используется healthcheck Docker.",
         "operationId": "health_api_health_get",
         "responses": {
           "200": {
             "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "База данных недоступна",
             "content": {
               "application/json": {
                 "schema": {
@@ -33,6 +44,7 @@
           "Служебное"
         ],
         "summary": "Сбросить демо-данные (только в демо-режиме)",
+        "description": "Удаляет все заявки и заново загружает справочники и демо-заявки из data/seed.",
         "operationId": "demo_reset_api_demo_reset_post",
         "responses": {
           "204": {
@@ -56,7 +68,7 @@
         "tags": [
           "Авторизация"
         ],
-        "summary": "Тестовые учетные записи (только в демо-режиме)",
+        "summary": "Тестовые учётные записи (только в демо-режиме)",
         "operationId": "test_accounts_api_auth_test_accounts_get",
         "responses": {
           "200": {
@@ -91,8 +103,8 @@
         "tags": [
           "Авторизация"
         ],
-        "summary": "Вход по тестовой учетной записи",
-        "description": "Клиент уже обслуживается в банке, поэтому регистрации нет. Токен передается в заголовке `Authorization: Bearer <token>`.",
+        "summary": "Вход по тестовой учётной записи",
+        "description": "Клиент уже обслуживается в банке, поэтому регистрации нет. Токен передаётся в заголовке `Authorization: Bearer <token>`.",
         "operationId": "login_api_auth_login_post",
         "requestBody": {
           "content": {
@@ -143,8 +155,8 @@
         "tags": [
           "Авторизация"
         ],
-        "summary": "Выход из тестовой учетной записи",
-        "description": "Токен без состояния: клиент удаляет его у себя.",
+        "summary": "Выход",
+        "description": "Токен без состояния: клиент просто удаляет его у себя.",
         "operationId": "logout_api_auth_logout_post",
         "responses": {
           "204": {
@@ -403,7 +415,7 @@
           "Заявки клиента"
         ],
         "summary": "Создать черновик заявки",
-        "description": "Компания берётся из профиля клиента. Поля можно передать сразу или заполнять по шагам в PATCH.",
+        "description": "Компания берётся из профиля клиента. Поля можно передать сразу (например, из помощника подбора) или заполнять по шагам через PATCH.",
         "operationId": "create_application_api_applications_post",
         "requestBody": {
           "content": {
@@ -469,7 +481,7 @@
         "tags": [
           "Заявки клиента"
         ],
-        "summary": "Заявка (для клиентской стороны)",
+        "summary": "Заявка (клиентская проекция)",
         "description": "Для отслеживания статуса опрашивать раз в 2 секунды, пока статус в submitted / validation / enrichment / scoring.",
         "operationId": "get_application_api_applications__application_id__get",
         "security": [
@@ -1299,7 +1311,7 @@
         "tags": [
           "Сотрудник банка"
         ],
-        "summary": "Карточка заявки (для банковской стороны)",
+        "summary": "Карточка заявки (полная проекция)",
         "operationId": "card_api_analyst_applications__application_id__get",
         "security": [
           {
@@ -1377,7 +1389,7 @@
           "Сотрудник банка"
         ],
         "summary": "Решение специалиста",
-        "description": "Доступно в статусах `manual_review` и `docs_requested`. `approve` - одобрить запрошенное; `counter_offer` - сумма меньше запрошенной; `request_docs` - запросить информацию (infoItems); `reject` - отказ (reasonCode из справочника). Комментарий для клиента обязателен для всех действий, кроме approve.",
+        "description": "Доступно в статусах manual_review и docs_requested. approve — одобрить запрошенное; counter_offer — сумма меньше запрошенной; request_docs — запросить информацию (infoItems); reject — отказ (reasonCode из справочника). Комментарий для клиента обязателен для всех действий, кроме approve.",
         "operationId": "decide_api_analyst_applications__application_id__decision_post",
         "security": [
           {
@@ -1507,7 +1519,10 @@
               }
             ],
             "title": "Amount",
-            "description": "Сумма для counter_offer"
+            "description": "Сумма для counter_offer",
+            "examples": [
+              3000000
+            ]
           },
           "commentForClient": {
             "anyOf": [
@@ -1519,7 +1534,10 @@
               }
             ],
             "title": "Commentforclient",
-            "description": "Обязателен для всех действий, кроме approve"
+            "description": "Обязателен для всех действий, кроме approve",
+            "examples": [
+              "Снизили сумму из-за признаков риска"
+            ]
           },
           "reasonCode": {
             "anyOf": [
@@ -1545,7 +1563,7 @@
               }
             ],
             "title": "Infoitems",
-            "descriprion": "Что запросить у клиента, для request_docs"
+            "description": "Что запросить у клиента, для request_docs"
           }
         },
         "type": "object",
@@ -2150,7 +2168,10 @@
                 "type": "null"
               }
             ],
-            "title": "Productid"
+            "title": "Productid",
+            "examples": [
+              "working-capital"
+            ]
           },
           "amount": {
             "anyOf": [
@@ -2162,7 +2183,10 @@
                 "type": "null"
               }
             ],
-            "title": "Amount"
+            "title": "Amount",
+            "examples": [
+              1500000
+            ]
           },
           "termMonths": {
             "anyOf": [
@@ -2175,7 +2199,10 @@
                 "type": "null"
               }
             ],
-            "title": "Termmonths"
+            "title": "Termmonths",
+            "examples": [
+              24
+            ]
           },
           "purpose": {
             "anyOf": [
@@ -2185,6 +2212,9 @@
               {
                 "type": "null"
               }
+            ],
+            "examples": [
+              "working_capital"
             ]
           },
           "collateral": {
@@ -2195,6 +2225,9 @@
               {
                 "type": "null"
               }
+            ],
+            "examples": [
+              "none"
             ]
           },
           "contact": {
@@ -2316,7 +2349,10 @@
                 "type": "null"
               }
             ],
-            "title": "Productid"
+            "title": "Productid",
+            "examples": [
+              "working-capital"
+            ]
           },
           "amount": {
             "anyOf": [
@@ -2328,7 +2364,10 @@
                 "type": "null"
               }
             ],
-            "title": "Amount"
+            "title": "Amount",
+            "examples": [
+              1500000
+            ]
           },
           "termMonths": {
             "anyOf": [
@@ -2341,7 +2380,10 @@
                 "type": "null"
               }
             ],
-            "title": "Termmonths"
+            "title": "Termmonths",
+            "examples": [
+              24
+            ]
           },
           "purpose": {
             "anyOf": [
@@ -2351,6 +2393,9 @@
               {
                 "type": "null"
               }
+            ],
+            "examples": [
+              "working_capital"
             ]
           },
           "collateral": {
@@ -2361,6 +2406,9 @@
               {
                 "type": "null"
               }
+            ],
+            "examples": [
+              "none"
             ]
           },
           "contact": {
@@ -2690,17 +2738,26 @@
           "name": {
             "type": "string",
             "minLength": 1,
-            "title": "Name"
+            "title": "Name",
+            "examples": [
+              "Иванов Иван Иванович"
+            ]
           },
           "phone": {
             "type": "string",
             "pattern": "^\\+?[\\d\\s()-]{10,}$",
-            "title": "Phone"
+            "title": "Phone",
+            "examples": [
+              "+7 (843) 000-27-14"
+            ]
           },
           "email": {
             "type": "string",
             "pattern": "^\\S+@\\S+\\.\\S+$",
-            "title": "Email"
+            "title": "Email",
+            "examples": [
+              "finance@prodmarket.example"
+            ]
           }
         },
         "type": "object",
@@ -2803,12 +2860,12 @@
       },
       "Dictionaries": {
         "properties": {
-          "purpose": {
+          "purposes": {
             "items": {
               "$ref": "#/components/schemas/DictionaryItem"
             },
             "type": "array",
-            "title": "Purpose"
+            "title": "Purposes"
           },
           "collateralTypes": {
             "items": {
@@ -2835,7 +2892,7 @@
         },
         "type": "object",
         "required": [
-          "purpose",
+          "purposes",
           "collateralTypes",
           "rejectReasons",
           "infoItems"
@@ -3024,12 +3081,17 @@
           "version": {
             "type": "string",
             "title": "Version"
+          },
+          "database": {
+            "type": "string",
+            "title": "Database"
           }
         },
         "type": "object",
         "required": [
           "status",
-          "version"
+          "version",
+          "database"
         ],
         "title": "Health"
       },
@@ -3079,11 +3141,17 @@
         "properties": {
           "code": {
             "type": "string",
-            "title": "Code"
+            "title": "Code",
+            "examples": [
+              "monthly_revenue_confirm"
+            ]
           },
           "value": {
             "type": "string",
-            "title": "Value"
+            "title": "Value",
+            "examples": [
+              "900000"
+            ]
           }
         },
         "type": "object",
@@ -3800,7 +3868,10 @@
           "code": {
             "type": "string",
             "pattern": "^\\d{6}$",
-            "title": "Code"
+            "title": "Code",
+            "examples": [
+              "123456"
+            ]
           }
         },
         "type": "object",
