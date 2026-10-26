@@ -12,7 +12,7 @@ FastAPI-приложение: API личного кабинета, кредит�
 
 ```bash
 docker compose up --build -d     # первый запуск или после изменений в коде
-docker compose ps                # api, mocks — healthy; migrate — Exited (0)
+docker compose ps -a              # api, mocks — healthy; migrate — Exited (0)
 docker compose logs migrate      # что сделала подготовка базы
 ```
 

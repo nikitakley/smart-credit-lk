@@ -28,6 +28,7 @@
 | @vitejs/plugin-react (dev) | 6.1.2 | MIT | Поддержка React в Vite |
 | Node.js (образ `node:24-alpine`) | 24 | MIT | Сборка фронтенда в Docker (только этап сборки) |
 | nginx (образ `nginx:1.28-alpine`) | 1.28 | BSD-2-Clause | Раздача собранного фронтенда и прокси `/api/` в Docker |
+| newman (запуск через `npx`, в образы не входит) | 6.2.3 | Apache-2.0 | Запуск коллекции запросов из командной строки |
 
 Симулятор внешних источников `mocks/` использует те же библиотеки (FastAPI, Starlette, Pydantic, pydantic-settings, Uvicorn; для тестов — pytest и httpx2) и лицензии; его версии могут отличаться на минорную версию.
 
