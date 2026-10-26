@@ -10,7 +10,7 @@ import Page from '../../components/Page.jsx';
 import StatusTimeline from '../../components/StatusTimeline.jsx';
 import RingGauge from '../../components/art/RingGauge.jsx';
 import { fieldErrors, getApplication, respondInfo } from '../../api/client.js';
-import { useLoad } from '../../api/useLoad.js';
+import { useApplication } from '../../api/useLoad.js';
 import { IN_PROGRESS, buildTimeline } from '../../config/statuses.js';
 import { decisionHeadline } from '../../lib/decision.js';
 import { formatDateTime, formatRub } from '../../lib/format.js';
@@ -66,7 +66,7 @@ function InfoRequestForm({ app }) {
 export default function ApplicationStatus() {
   const { id } = useParams();
   // Опрос раз в 10 секунд — клиент видит решение аналитика без перезагрузки
-  const { data: app, error } = useLoad(() => getApplication(id), [id], { pollMs: 10000 });
+  const { data: app, error } = useApplication(() => getApplication(id), [id]);
 
   if (error) return <LoadError error={error} backTo="/applications" backLabel="К моим заявкам" />;
   if (!app) return <Page title={`Заявка № ${id}`} subtitle="Загружаем заявку…" />;

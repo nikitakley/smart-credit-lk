@@ -190,6 +190,9 @@ a.btn { display: inline-flex; align-items: center; justify-content: center; text
 .timeline__step--upcoming .timeline__label { color: var(--text-secondary); font-weight: var(--fw-medium); }
 .timeline__step--error .timeline__label { color: var(--status-error); }
 .timeline__meta { font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-secondary); }
+/* Отметки внутри шага: события без смены статуса */
+.timeline__marks { list-style: none; margin: var(--space-2) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-1); }
+.timeline__mark { font-size: var(--fs-small); line-height: var(--lh-small); padding-left: var(--space-3); border-left: 2px solid var(--border); }
 
 /* ---------- Таблица ---------- */
 .table-wrap { overflow-x: auto; }

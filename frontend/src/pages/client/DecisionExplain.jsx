@@ -8,12 +8,12 @@ import LoadError from '../../components/LoadError.jsx';
 import Page from '../../components/Page.jsx';
 import ArtDecision from '../../components/art/ArtDecision.jsx';
 import { getApplication } from '../../api/client.js';
-import { useLoad } from '../../api/useLoad.js';
+import { useApplication } from '../../api/useLoad.js';
 import { decisionHeadline, decisionLead } from '../../lib/decision.js';
 
 export default function DecisionExplain() {
   const { id } = useParams();
-  const { data: app, error } = useLoad(() => getApplication(id), [id]);
+  const { data: app, error } = useApplication(() => getApplication(id), [id]);
 
   if (error) return <LoadError error={error} backTo="/applications" backLabel="К моим заявкам" />;
   if (!app) return <Page title="Почему такое решение" subtitle="Загружаем решение…" />;

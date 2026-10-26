@@ -8,7 +8,7 @@ import LoadError from '../../components/LoadError.jsx';
 import Page from '../../components/Page.jsx';
 import ArtOffer from '../../components/art/ArtOffer.jsx';
 import { acceptOffer, declineOffer, getApplication } from '../../api/client.js';
-import { useLoad } from '../../api/useLoad.js';
+import { useApplication } from '../../api/useLoad.js';
 import { formatDate, formatMonths, formatPercent, formatRub } from '../../lib/format.js';
 
 const COLLATERAL = { none: 'нет' };
@@ -16,7 +16,7 @@ const COLLATERAL = { none: 'нет' };
 export default function Offer() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data: app, error } = useLoad(() => getApplication(id), [id]);
+  const { data: app, error } = useApplication(() => getApplication(id), [id]);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState(null);
 

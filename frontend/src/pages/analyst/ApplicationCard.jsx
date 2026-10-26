@@ -11,7 +11,7 @@ import LoadError from '../../components/LoadError.jsx';
 import Page from '../../components/Page.jsx';
 import RingGauge from '../../components/art/RingGauge.jsx';
 import { decide, fieldErrors, getAnalystApplication, getDictionaries, refreshChecks } from '../../api/client.js';
-import { useLoad } from '../../api/useLoad.js';
+import { useApplication, useLoad } from '../../api/useLoad.js';
 import { ACTORS, ANALYST_DECIDES, CHECKS_REFRESH, STATUS } from '../../config/statuses.js';
 import { decisionHeadline } from '../../lib/decision.js';
 import { formatAge, formatDate, formatDateTime, formatPercent, formatRub } from '../../lib/format.js';
@@ -183,7 +183,7 @@ function ChecksCard({ app, dicts, onRefreshed }) {
 
 export default function ApplicationCard() {
   const { id } = useParams();
-  const { data: app, error, mutate } = useLoad(() => getAnalystApplication(id), [id], { pollMs: 15000 });
+  const { data: app, error, mutate } = useApplication(() => getAnalystApplication(id), [id]);
   const { data: dicts } = useLoad(getDictionaries, []);
 
   const back = <Link to="/analyst" className="hero__back">← Очередь заявок</Link>;
@@ -257,7 +257,12 @@ export default function ApplicationCard() {
               {app.history.map((h, i) => (
                 <li key={i}>
                   <span className="muted small">{formatDateTime(h.at)}</span>
-                  <span>{STATUS[h.status]?.label ?? h.status} · {ACTORS[h.actor] ?? h.actor}{h.note && <span className="muted"> — {h.note}</span>}</span>
+                  {h.kind && h.kind !== 'status_changed' ? (
+                    // Событие без смены статуса (например, повторный запрос данных) — отметка, статус не дублируем
+                    <span><span aria-hidden="true">↻ </span>{h.note ?? 'Событие'} · {ACTORS[h.actor] ?? h.actor}</span>
+                  ) : (
+                    <span>{STATUS[h.status]?.label ?? h.status} · {ACTORS[h.actor] ?? h.actor}{h.note && <span className="muted"> — {h.note}</span>}</span>
+                  )}
                 </li>
               ))}
             </ul>
