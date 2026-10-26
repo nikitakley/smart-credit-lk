@@ -332,10 +332,18 @@ a.btn { display: inline-flex; align-items: center; justify-content: center; text
 
 /* Проверки банка (checks[]): название и вывод слева, статус справа */
 .checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-.check-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-3) 0; }
+.check-row { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-3) 0; }
 .check-row + .check-row { border-top: 1px solid var(--border); }
+.check-row__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
 .check-row__text { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
 .check-row .badge { flex: none; }
+@media (max-width: 600px) { .check-row__head { flex-direction: column; align-items: flex-start; } }
+/* Сведения источника у аналитика — раскрываются по клику */
+.check-details summary { cursor: pointer; font-weight: var(--fw-semibold); color: var(--text-secondary); width: fit-content; }
+.check-details summary:hover { color: var(--text-primary); }
+.check-details[open] summary { margin-bottom: var(--space-3); }
+.kv-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 600px) { .kv-grid--2 { grid-template-columns: 1fr; } }
 
 /* Группа полей формы решения — без рамки fieldset */
 fieldset.stack-sm { border: 0; margin: 0; padding: 0; min-width: 0; display: flex; flex-direction: column; gap: var(--space-3); }

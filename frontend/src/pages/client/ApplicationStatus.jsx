@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import Badge, { StatusBadge } from '../../components/Badge.jsx';
+import { StatusBadge } from '../../components/Badge.jsx';
 import Button from '../../components/Button.jsx';
 import Card from '../../components/Card.jsx';
+import ChecksList from '../../components/ChecksList.jsx';
 import Field from '../../components/Field.jsx';
 import LoadError from '../../components/LoadError.jsx';
 import Page from '../../components/Page.jsx';
@@ -13,26 +14,6 @@ import { useLoad } from '../../api/useLoad.js';
 import { IN_PROGRESS, buildTimeline } from '../../config/statuses.js';
 import { decisionHeadline } from '../../lib/decision.js';
 import { formatDateTime, formatRub } from '../../lib/format.js';
-
-// Результаты проверок банка (ApplicationClient.checks)
-export const CHECK_TONE = { ok: 'success', warning: 'warning', fail: 'error', unavailable: 'info' };
-const CHECK_LABEL = { ok: 'В порядке', warning: 'Есть замечания', fail: 'Не пройдена', unavailable: 'Нет данных' };
-
-export function ChecksList({ checks }) {
-  return (
-    <ul className="checks">
-      {checks.map((c) => (
-        <li key={c.source} className="check-row">
-          <div className="check-row__text">
-            <b>{c.title}</b>
-            <span className="small muted">{c.summary}</span>
-          </div>
-          <Badge tone={CHECK_TONE[c.status] ?? 'info'}>{CHECK_LABEL[c.status] ?? c.status}</Badge>
-        </li>
-      ))}
-    </ul>
-  );
-}
 
 // Ответ на запрос дополнительной информации (статус docs_requested)
 function InfoRequestForm({ app }) {

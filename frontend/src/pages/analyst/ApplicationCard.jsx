@@ -4,6 +4,7 @@ import AiHint from '../../components/AiHint.jsx';
 import { StatusBadge } from '../../components/Badge.jsx';
 import Button from '../../components/Button.jsx';
 import Card from '../../components/Card.jsx';
+import ChecksList from '../../components/ChecksList.jsx';
 import FactorList from '../../components/FactorList.jsx';
 import Field from '../../components/Field.jsx';
 import LoadError from '../../components/LoadError.jsx';
@@ -14,7 +15,6 @@ import { useLoad } from '../../api/useLoad.js';
 import { ACTORS, ANALYST_DECIDES, STATUS } from '../../config/statuses.js';
 import { decisionHeadline } from '../../lib/decision.js';
 import { formatAge, formatDate, formatDateTime, formatPercent, formatRub } from '../../lib/format.js';
-import { ChecksList } from '../client/ApplicationStatus.jsx';
 
 const ACTIONS = [
   { key: 'approve', label: 'Одобрить' },
@@ -187,7 +187,7 @@ export default function ApplicationCard() {
           {app.checks?.length > 0 && (
             <Card className="stack">
               <h2>Проверки</h2>
-              <ChecksList checks={app.checks} />
+              <ChecksList checks={app.checks} withDetails unavailableReasons={dicts?.unavailableReasons} />
             </Card>
           )}
 
