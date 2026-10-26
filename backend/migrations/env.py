@@ -11,8 +11,9 @@ from app.db.base import Base
 
 config = context.config
 
-# Логирование из alembic.ini
-if config.config_file_name is not None:
+# Логирование из alembic.ini. Тесты запускают миграции из кода и отключают это,
+# чтобы Alembic не перенастраивал логирование pytest.
+if config.config_file_name is not None and config.attributes.get("configure_logger", True):
     fileConfig(config.config_file_name)
 
 # Адрес базы — из настроек приложения (переменная DATABASE_URL), а не из alembic.ini.

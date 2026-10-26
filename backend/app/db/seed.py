@@ -194,7 +194,8 @@ class SeedApplication(SeedModel):
 T = TypeVar("T", bound=SeedModel)
 
 
-def _read(name: str, model: type[T], seed_dir: Path) -> list[T]:
+def read_seed(name: str, model: type[T], seed_dir: Path) -> list[T]:
+    """Прочитать JSON-файл из папки сидов и проверить каждую запись моделью."""
     path = seed_dir / name
     data = json.loads(path.read_text(encoding="utf-8"))
     return [model.model_validate(item) for item in data]
@@ -207,10 +208,10 @@ def seed_reference_data(session: Session, seed_dir: Path) -> None:
     """Продукты, компании с банковскими профилями, учётки. Повторный запуск обновляет записи."""
     now = datetime.now(UTC)
 
-    for p in _read("products.json", SeedProduct, seed_dir):
+    for p in read_seed("products.json", SeedProduct, seed_dir):
         session.merge(models.Product(**p.model_dump()))
 
-    for c in _read("companies.json", SeedCompany, seed_dir):
+    for c in read_seed("companies.json", SeedCompany, seed_dir):
         if not (is_valid_inn(c.inn) and is_valid_ogrn(c.ogrn) and is_valid_account(c.account, BANK_BIK)):
             raise ValueError(f"Неверные реквизиты компании {c.name}: проверьте контрольные суммы")
         session.merge(models.Company(
@@ -224,7 +225,7 @@ def seed_reference_data(session: Session, seed_dir: Path) -> None:
         session.merge(models.BankProfile(company_inn=c.inn, **c.bank_profile.model_dump()))
 
     session.flush()  # компании должны оказаться в базе раньше учёток, которые на них ссылаются
-    for a in _read("accounts.json", SeedAccount, seed_dir):
+    for a in read_seed("accounts.json", SeedAccount, seed_dir):
         session.merge(models.Account(**a.model_dump()))
     session.flush()
 
@@ -340,7 +341,7 @@ def reset_demo_applications(session: Session, seed_dir: Path) -> int:
     session.execute(delete(models.Application))
 
     now = datetime.now(UTC)
-    seeds = _read("demo_applications.json", SeedApplication, seed_dir)
+    seeds = read_seed("demo_applications.json", SeedApplication, seed_dir)
     for seed in seeds:
         session.add(_build_application(seed, session, now))
     session.flush()

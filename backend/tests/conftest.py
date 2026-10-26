@@ -1,14 +1,114 @@
-import pytest
-from fastapi.testclient import TestClient
+"""Общие фикстуры тестов.
 
+Тесты работают с настоящим PostgreSQL (тем же, что поднимает docker compose), но с отдельной
+базой credit_test. Рабочая база разработчика (credit) не затрагивается.
+
+Как это устроено:
+  1) один раз за запуск: создать базу credit_test, если её нет, и применить миграции;
+  2) перед каждым тестом, которому нужна база: загрузить справочники и демо-заявки заново,
+     чтобы тесты не зависели друг от друга и от порядка запуска.
+Unit-тесты (автомат статусов, реквизиты) базу не запрашивают и работают без неё.
+"""
+
+import os
+
+from sqlalchemy.engine import make_url
+
+# Адрес тестовой базы выставляем до импорта приложения: движок SQLAlchemy создаётся
+# при импорте app.db.session и берёт адрес из настроек (переменная DATABASE_URL).
+TEST_DATABASE_URL = os.environ.get(
+    "TEST_DATABASE_URL", "postgresql+psycopg://credit:credit@localhost:5432/credit_test"
+)
+_test_url = make_url(TEST_DATABASE_URL)
+if not (_test_url.database or "").endswith("_test"):
+    # Тесты удаляют все заявки — защита от случайного запуска на рабочей базе.
+    raise RuntimeError(f"Имя тестовой базы должно оканчиваться на _test: {_test_url.render_as_string()}")
+os.environ["DATABASE_URL"] = TEST_DATABASE_URL
+os.environ["DEMO_MODE"] = "true"
+os.environ["DEMO_SHOW_SIGN_CODE"] = "true"
+
+# Импорты приложения только после настройки окружения выше
+from collections.abc import Iterator
+from pathlib import Path
+
+import pytest
+from alembic import command
+from alembic.config import Config
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine, text
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import Session
+
+from app.config import get_settings
+from app.db.seed import reset_demo_applications, seed_reference_data
+from app.db.session import SessionLocal, engine
 from app.main import app
-from app.stubs import store
+
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+
+
+def alembic_config() -> Config:
+    config = Config(str(BACKEND_DIR / "alembic.ini"))
+    config.attributes["configure_logger"] = False  # не трогать логирование pytest (см. migrations/env.py)
+    return config
+
+
+def create_database_if_missing() -> None:
+    url = make_url(TEST_DATABASE_URL)
+    # Подключаемся к служебной базе postgres.
+    # CREATE DATABASE не выполняется внутри транзакции, поэтому режим AUTOCOMMIT.
+    admin_engine = create_engine(url.set(database="postgres"), isolation_level="AUTOCOMMIT")
+    try:
+        with admin_engine.connect() as connection:
+            exists = connection.scalar(
+                text("SELECT 1 FROM pg_database WHERE datname = :name"), {"name": url.database}
+            )
+            if not exists:
+                name = connection.dialect.identifier_preparer.quote(url.database)
+                connection.execute(text(f"CREATE DATABASE {name}"))
+    finally:
+        admin_engine.dispose()
+
+
+@pytest.fixture(scope="session")
+def database() -> Iterator[None]:
+    """Один раз за запуск: тестовая база существует и её схема соответствует последней миграции."""
+    try:
+        create_database_if_missing()
+    except OperationalError as exc:
+        pytest.exit(
+            f"PostgreSQL недоступен по адресу {make_url(TEST_DATABASE_URL).render_as_string()}.\n"
+            "Запустите базу из корня репозитория: docker compose up -d postgres\n"
+            f"Ошибка: {exc.orig}",
+            returncode=1,
+        )
+    command.upgrade(alembic_config(), "head")
+    yield
+    engine.dispose()
 
 
 @pytest.fixture
-def client() -> TestClient:
-    store.state.reset()
-    return TestClient(app)
+def demo_data(database: None) -> None:
+    """Перед тестом: справочники и демо-заявки в исходном состоянии (как после POST /api/demo/reset)."""
+    settings = get_settings()
+    with SessionLocal() as session:
+        seed_reference_data(session, settings.seed_dir)
+        reset_demo_applications(session, settings.seed_dir)
+        session.commit()
+
+
+@pytest.fixture
+def db(demo_data: None) -> Iterator[Session]:
+    """Сессия базы для тестов, которые работают с сервисами и моделями напрямую, без HTTP."""
+    with SessionLocal() as session:
+        yield session
+
+
+@pytest.fixture
+def client(demo_data: None) -> Iterator[TestClient]:
+    """HTTP-клиент к приложению: запросы идут в FastAPI без запуска сервера."""
+    with TestClient(app) as test_client:
+        yield test_client
 
 
 def login(client: TestClient, account_id: str) -> dict[str, str]:
