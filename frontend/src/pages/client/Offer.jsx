@@ -4,6 +4,7 @@ import AiHint from '../../components/AiHint.jsx';
 import { StatusBadge } from '../../components/Badge.jsx';
 import Button from '../../components/Button.jsx';
 import Card from '../../components/Card.jsx';
+import LoadError from '../../components/LoadError.jsx';
 import Page from '../../components/Page.jsx';
 import ArtOffer from '../../components/art/ArtOffer.jsx';
 import { acceptOffer, declineOffer, getApplication } from '../../api/client.js';
@@ -19,7 +20,7 @@ export default function Offer() {
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState(null);
 
-  if (error) return <Page title="Заявка не найдена" subtitle={error.message} />;
+  if (error) return <LoadError error={error} backTo="/applications" backLabel="К моим заявкам" />;
   if (!app) return <Page title="Предложение банка" subtitle="Загружаем предложение…" />;
 
   const o = app.offer;

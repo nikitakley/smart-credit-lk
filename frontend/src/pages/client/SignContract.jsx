@@ -4,6 +4,7 @@ import AiHint from '../../components/AiHint.jsx';
 import Button from '../../components/Button.jsx';
 import Card from '../../components/Card.jsx';
 import Field from '../../components/Field.jsx';
+import LoadError from '../../components/LoadError.jsx';
 import Page from '../../components/Page.jsx';
 import ArtDocument from '../../components/art/ArtDocument.jsx';
 import { getApplication, requestSignCode, signContract } from '../../api/client.js';
@@ -24,7 +25,7 @@ export default function SignContract() {
   const [codeError, setCodeError] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  if (error) return <Page title="Заявка не найдена" subtitle={error.message} />;
+  if (error) return <LoadError error={error} backTo="/applications" backLabel="К моим заявкам" />;
   if (!app) return <Page title="Подписание договора" subtitle="Загружаем договор…" />;
 
   if (app.status !== 'signing') {

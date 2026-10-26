@@ -97,6 +97,7 @@ export default function ApplicationWizard() {
 
   // Ошибка сервера: поля → подсказки у полей, клиента возвращаем на шаг с первой ошибкой
   const showServerError = (err) => {
+    if (err.code === 'not_draft' && draftId) { navigate(`/applications/${draftId}`, { replace: true }); return; }
     const f = fieldErrors(err);
     const mapped = {
       amount: f.amount ?? f.termMonths ?? f.productId ?? f.purpose,

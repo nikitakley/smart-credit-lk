@@ -4,6 +4,7 @@ import { StatusBadge } from '../../components/Badge.jsx';
 import Button from '../../components/Button.jsx';
 import Card from '../../components/Card.jsx';
 import FactorList, { FactorLegend } from '../../components/FactorList.jsx';
+import LoadError from '../../components/LoadError.jsx';
 import Page from '../../components/Page.jsx';
 import ArtDecision from '../../components/art/ArtDecision.jsx';
 import { getApplication } from '../../api/client.js';
@@ -14,7 +15,7 @@ export default function DecisionExplain() {
   const { id } = useParams();
   const { data: app, error } = useLoad(() => getApplication(id), [id]);
 
-  if (error) return <Page title="Заявка не найдена" subtitle={error.message} />;
+  if (error) return <LoadError error={error} backTo="/applications" backLabel="К моим заявкам" />;
   if (!app) return <Page title="Почему такое решение" subtitle="Загружаем решение…" />;
 
   const d = app.decision;

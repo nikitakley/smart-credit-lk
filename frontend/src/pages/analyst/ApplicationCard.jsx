@@ -6,6 +6,7 @@ import Button from '../../components/Button.jsx';
 import Card from '../../components/Card.jsx';
 import FactorList from '../../components/FactorList.jsx';
 import Field from '../../components/Field.jsx';
+import LoadError from '../../components/LoadError.jsx';
 import Page from '../../components/Page.jsx';
 import RingGauge from '../../components/art/RingGauge.jsx';
 import { decide, fieldErrors, getAnalystApplication, getDictionaries } from '../../api/client.js';
@@ -148,7 +149,7 @@ export default function ApplicationCard() {
   const { data: dicts } = useLoad(getDictionaries, []);
 
   const back = <Link to="/analyst" className="hero__back">← Очередь заявок</Link>;
-  if (error) return <Page eyebrow={back} title="Заявка не найдена" subtitle={error.message} />;
+  if (error) return <LoadError error={error} eyebrow={back} backTo="/analyst" backLabel="К очереди заявок" />;
   if (!app) return <Page eyebrow={back} title={`Заявка № ${id}`} subtitle="Загружаем заявку…" />;
 
   const c = app.company;

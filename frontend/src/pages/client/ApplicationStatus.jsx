@@ -4,6 +4,7 @@ import Badge, { StatusBadge } from '../../components/Badge.jsx';
 import Button from '../../components/Button.jsx';
 import Card from '../../components/Card.jsx';
 import Field from '../../components/Field.jsx';
+import LoadError from '../../components/LoadError.jsx';
 import Page from '../../components/Page.jsx';
 import StatusTimeline from '../../components/StatusTimeline.jsx';
 import RingGauge from '../../components/art/RingGauge.jsx';
@@ -86,7 +87,7 @@ export default function ApplicationStatus() {
   // Опрос раз в 10 секунд — клиент видит решение аналитика без перезагрузки
   const { data: app, error } = useLoad(() => getApplication(id), [id], { pollMs: 10000 });
 
-  if (error) return <Page title="Заявка не найдена" subtitle={error.message} />;
+  if (error) return <LoadError error={error} backTo="/applications" backLabel="К моим заявкам" />;
   if (!app) return <Page title={`Заявка № ${id}`} subtitle="Загружаем заявку…" />;
 
   const history = app.history ?? [];
