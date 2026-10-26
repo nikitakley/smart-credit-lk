@@ -26,6 +26,8 @@
 | Шрифт Manrope (`@fontsource-variable/manrope`) | 5.3.0 | SIL OFL 1.1 | Шрифт интерфейса, подключён локально |
 | Vite (dev) | 8.3.4 | MIT | Сборка и dev-сервер фронтенда |
 | @vitejs/plugin-react (dev) | 6.1.2 | MIT | Поддержка React в Vite |
+| Node.js (образ `node:24-alpine`) | 24 | MIT | Сборка фронтенда в Docker (только этап сборки) |
+| nginx (образ `nginx:1.28-alpine`) | 1.28 | BSD-2-Clause | Раздача собранного фронтенда и прокси `/api/` в Docker |
 
 Симулятор внешних источников `mocks/` использует те же библиотеки (FastAPI, Starlette, Pydantic, pydantic-settings, Uvicorn; для тестов — pytest и httpx2) и лицензии; его версии могут отличаться на минорную версию.
 

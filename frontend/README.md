@@ -20,6 +20,19 @@ API_TARGET=http://localhost:8080 npm run dev
 
 Сборка: `npm run build`, просмотр сборки: `npm run preview` (прокси тот же).
 
+## Docker
+
+`Dockerfile` собирает фронтенд (`npm ci && npm run build` в `node:24-alpine`) и раздаёт `dist/` через `nginx:1.28-alpine`.
+`nginx.conf`: любой маршрут отдаёт `index.html` (роутинг на клиенте), `/api/` проксируется на `http://api:8000` —
+сервис `api` из `docker-compose.yml`.
+
+```bash
+docker build -t smart-credit-frontend ./frontend
+```
+
+В `docker-compose.yml` фронтенд — сервис `frontend`: `docker compose up --build -d` из корня, затем http://localhost:8080
+(порт меняется переменной `WEB_PORT`). Сервис стартует после того, как `api` станет healthy.
+
 ## Демо-входы
 
 На экране входа — тестовые учётные записи из `GET /api/auth/test-accounts`:
