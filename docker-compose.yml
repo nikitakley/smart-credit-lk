@@ -14,6 +14,13 @@ x-backend: &backend
     JWT_SECRET: ${JWT_SECRET:-docker-dev-secret-code-0123456789abcdef}
     JWT_TTL_MINUTES: ${JWT_TTL_MINUTES:-480}
     DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-credit}:${POSTGRES_PASSWORD:-credit}@postgres:5432/${POSTGRES_DB:-credit}
+    # Внешние источники — сервис mocks; у каждого источника свой адрес, как у настоящих сервисов
+    EGR_BASE_URL: http://mocks:8001/egr
+    NBKI_BASE_URL: http://mocks:8001/nbki
+    PB_BASE_URL: http://mocks:8001/pb
+    INTEGRATION_API_KEY: ${MOCKS_API_KEY:-local-mocks-key}
+    INTEGRATION_TIMEOUT_SECONDS: ${INTEGRATION_TIMEOUT_SECONDS:-3}
+    INTEGRATION_RETRIES: ${INTEGRATION_RETRIES:-2}
   volumes:
     # Справочники и демо-данные — только для чтения
     - ./data/seed:/app/data/seed:ro
@@ -38,6 +45,27 @@ services:
       timeout: 3s
       retries: 10
 
+  # Симулятор внешних источников: ЕГРЮЛ/ЕГРИП, НБКИ, ФНС «Прозрачный бизнес».
+  # Отдельный сетевой сервис со своим ключом доступа — как настоящие внешние системы.
+  mocks:
+    build: ./mocks
+    image: smart-credit-lk-mocks
+    restart: unless-stopped
+    environment:
+      MOCKS_API_KEY: ${MOCKS_API_KEY:-local-mocks-key}
+      MOCK_LATENCY_MIN_MS: ${MOCK_LATENCY_MIN_MS:-300}
+      MOCK_LATENCY_MAX_MS: ${MOCK_LATENCY_MAX_MS:-1200}
+      MOCK_FAILURE_RATE: ${MOCK_FAILURE_RATE:-0}
+    # Swagger симулятора и управление сбоями — только с этого компьютера
+    ports:
+      - "127.0.0.1:${MOCKS_PORT:-8001}:8001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
   # Разовая подготовка базы: миграции схемы, затем справочники и демо-заявки.
   # Отрабатывает и завершается (статус Exited (0) — это норма). Повторный запуск безопасен:
   # применённые миграции пропускаются, справочники обновляются, существующие заявки не трогаются.
@@ -58,6 +86,9 @@ services:
       # API стартует только после успешной подготовки базы
       migrate:
         condition: service_completed_successfully
+      # От симулятора API не зависит жёстко: без него проверки получат статус unavailable, а сам API продолжит работать.
+      mocks:
+        condition: service_started
     ports:
       - "${API_PORT:-8000}:8000"
     healthcheck:
