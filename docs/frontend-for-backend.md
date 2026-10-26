@@ -21,9 +21,10 @@
 
 ## 2. Запуск
 
-Бэкенд — из корня репозитория: `docker compose up --build -d` (API на :8000, см. `backend/README.md`).
-Фронтенд — `frontend/README.md`: `npm ci && npm run dev`, http://localhost:5173, Vite проксирует `/api` на :8000
-(другой адрес — `API_TARGET`). Демо-данные возвращает `POST /api/demo/reset` (кнопка в очереди аналитика).
+Весь проект — из корня репозитория: `docker compose up --build -d`. Фронтенд — сервис `frontend`
+(nginx, http://localhost:8080, проксирует `/api` на сервис `api`), API — :8000, см. `backend/README.md`.
+Для разработки — dev-сервер Vite (`frontend/README.md`): `npm ci && npm run dev`, http://localhost:5173,
+`/api` проксируется на :8000 (другой адрес — `API_TARGET`). Демо-данные возвращает `POST /api/demo/reset` (кнопка в очереди аналитика).
 
 ## 3. Как фронт ходит в API
 

@@ -4,23 +4,24 @@ React 19 + Vite, без TypeScript и UI-библиотек. Данные — т
 
 ## Запуск
 
-1. Поднимите бэкенд из корня репозитория — API на :8000, подробности в `backend/README.md`:
+Весь проект одной командой из корня репозитория — фронтенд на http://localhost:8080, API на :8000
+(подробности в `backend/README.md`):
 
 ```bash
 docker compose up --build -d
 ```
 
-2. В папке `frontend`:
+Для разработки с горячей перезагрузкой — dev-сервер Vite поверх того же бэкенда, в папке `frontend`:
 
 ```bash
 npm ci
 npm run dev
 ```
 
-Откройте http://localhost:5173. Vite проксирует `/api` на `http://localhost:8000`; другой адрес — через переменную `API_TARGET`:
+Откройте http://localhost:5173. Vite проксирует `/api` на `http://localhost:8000`; другой адрес бэкенда — через переменную `API_TARGET`:
 
 ```bash
-API_TARGET=http://localhost:8080 npm run dev
+API_TARGET=http://localhost:9000 npm run dev
 ```
 
 Сборка: `npm run build`, просмотр сборки: `npm run preview` (прокси тот же).
