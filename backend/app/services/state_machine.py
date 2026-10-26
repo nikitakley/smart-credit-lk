@@ -1,16 +1,18 @@
 """Конечный автомат статусов заявки.
 
-Единственное место, где меняется статус. Каждый переход:
+Единственное место, где меняется статус и пишется история заявки. Каждый переход:
   1) проверяется по таблице разрешённых переходов;
   2) записывается событием в историю (таймлайн для клиента и журнал аудита для банка).
+Действия, которые не меняют статус (например, повторный запрос данных), тоже пишутся в историю —
+через record_event: это не переход, поэтому таблица переходов для них не нужна.
 """
 
-from app.schemas.enums import Actor
-from app.schemas.enums import ApplicationStatus as S
-from app.errors import conflict
 from app.db import models
+from app.errors import conflict
+from app.schemas.enums import Actor, EventKind
+from app.schemas.enums import ApplicationStatus as S
 
-# Таблица разрешенных переходов
+# Из какого статуса в какие можно перейти
 TRANSITIONS: dict[S, frozenset[S]] = {
     S.draft: frozenset({S.submitted}),
     S.submitted: frozenset({S.validation}),
@@ -68,6 +70,22 @@ def transition(
             f"Нельзя перевести заявку из статуса «{STATUS_LABELS[current]}» в «{STATUS_LABELS[target]}»",
         )
     application.status = target
-    application.events.append(
-        models.ApplicationEvent(status=target, actor=actor, actor_account_id=actor_account_id, note=note)
-    )
+    application.events.append(models.ApplicationEvent(
+        kind=EventKind.status_changed, status=target, actor=actor, actor_account_id=actor_account_id, note=note,
+    ))
+
+
+def record_event(
+    application: models.Application,
+    kind: EventKind,
+    actor: Actor,
+    *,
+    actor_account_id: str | None = None,
+    note: str | None = None,
+) -> None:
+    """Записать в историю действие без смены статуса. Статус события — текущий статус заявки."""
+    if kind == EventKind.status_changed:
+        raise ValueError("Смена статуса записывается только через transition()")
+    application.events.append(models.ApplicationEvent(
+        kind=kind, status=application.status, actor=actor, actor_account_id=actor_account_id, note=note,
+    ))

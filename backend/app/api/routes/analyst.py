@@ -49,7 +49,9 @@ def card(application_id: str, _: AnalystUser, db: DbSession) -> ApplicationAnaly
     "approve — одобрить запрошенное; counter_offer — сумма меньше запрошенной; "
     "request_docs — запросить информацию (infoItems); reject — отказ (reasonCode из справочника). "
     "Комментарий для клиента обязателен для всех действий, кроме approve.",
-    responses=error_responses(401, 403, 404, 409, 422),
+    responses=error_responses(
+        401, 403, 404, 409, 422, conflicts=("decision_not_allowed", "invalid_transition", "concurrent_update")
+    ),
 )
 def decide(
     application_id: str, body: AnalystDecisionRequest, user: AnalystUser, db: DbSession
@@ -62,11 +64,14 @@ def decide(
     response_model=ApplicationAnalyst,
     summary="Повторно запросить данные из источников",
     description="Запрашивает ЕГРЮЛ/ЕГРИП, НБКИ и «Прозрачный бизнес» и обновляет проверки заявки. "
-    "Статус заявки не меняется. Доступно в статусах enrichment, scoring, manual_review, docs_requested. "
+    "Статус заявки не меняется; в историю пишется событие kind = checks_refreshed. "
+    "Доступно в статусах enrichment, scoring, manual_review, docs_requested. "
     "Если источник не ответил, проверка получает статус unavailable — остальные данные всё равно сохраняются.",
-    responses=error_responses(401, 403, 404, 409),
+    responses=error_responses(
+        401, 403, 404, 409, conflicts=("checks_refresh_not_allowed", "not_submitted", "concurrent_update")
+    ),
 )
 def refresh_checks(
-    application_id: str, _: AnalystUser, db: DbSession, client: IntegrationClient
+    application_id: str, user: AnalystUser, db: DbSession, client: IntegrationClient
 ) -> ApplicationAnalyst:
-    return application_to_analyst(enrichment.refresh_checks(db, application_id, client))
+    return application_to_analyst(enrichment.refresh_checks(db, user, application_id, client))

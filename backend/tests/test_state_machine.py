@@ -1,20 +1,20 @@
-"""Unit-тесты автомата статусов заявки: без базы и без HTTP, только логика переходов."""
+"""Unit-тесты автомата статусов заявки: без базы и без HTTP — только логика переходов."""
 
 import pytest
 
 from app.config import get_settings
-from app.errors import ApiError
-from app.schemas.enums import TERMINAL_STATUSES, Actor
-from app.schemas.enums import ApplicationStatus as S
-from app.services.state_machine import STATUS_LABELS, TRANSITIONS, can_transition, transition
 from app.db import models
 from app.db.seed import SeedApplication, read_seed
+from app.errors import ApiError
+from app.schemas.enums import TERMINAL_STATUSES, Actor, EventKind
+from app.schemas.enums import ApplicationStatus as S
+from app.services.state_machine import STATUS_LABELS, TRANSITIONS, can_transition, record_event, transition
 
 DEMO_APPLICATIONS = read_seed("demo_applications.json", SeedApplication, get_settings().seed_dir)
 
 
 def make_application(status: S) -> models.Application:
-    # Объект существует только в памяти, в базу не сохраняется
+    # Объект существует только в памяти — в базу не сохраняется
     return models.Application(id="A-1", status=status)
 
 
@@ -30,7 +30,7 @@ def reachable_from(start: S) -> set[S]:
 
 
 def test_every_status_is_described() -> None:
-    # Новый статус в enum без правил переходов и подписи — ошибка, ловим сразу
+    # Новый статус в enum без правил переходов и подписи — ошибка, которую ловим сразу
     assert set(TRANSITIONS) == set(S)
     assert set(STATUS_LABELS) == set(S)
 
@@ -44,6 +44,20 @@ def test_allowed_transition_changes_status_and_writes_event() -> None:
     assert len(application.events) == 1
     event = application.events[0]
     assert (event.status, event.actor, event.actor_account_id) == (S.submitted, Actor.client, "prodmarket")
+    assert event.kind == EventKind.status_changed
+
+
+def test_event_without_status_change() -> None:
+    application = make_application(S.manual_review)
+
+    record_event(application, EventKind.checks_refreshed, Actor.analyst, actor_account_id="analyst", note="Обновлено")
+
+    assert application.status == S.manual_review  # статус не меняется
+    event = application.events[0]
+    assert (event.kind, event.status, event.actor) == (EventKind.checks_refreshed, S.manual_review, Actor.analyst)
+    # Смену статуса в обход таблицы переходов записать нельзя
+    with pytest.raises(ValueError):
+        record_event(application, EventKind.status_changed, Actor.system)
 
 
 @pytest.mark.parametrize(
