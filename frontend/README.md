@@ -4,11 +4,16 @@ React 19 + Vite, без TypeScript и UI-библиотек. Данные — т
 
 ## Запуск
 
-1. Поднимите бэкенд на :8000 — см. корневой README (`uv run uvicorn app.main:app --reload` или `docker compose up --build`).
+1. Поднимите бэкенд из корня репозитория — API на :8000, подробности в `backend/README.md`:
+
+```bash
+docker compose up --build -d
+```
+
 2. В папке `frontend`:
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
@@ -37,8 +42,9 @@ API_TARGET=http://localhost:8080 npm run dev
 
 ## Устройство
 
-- `src/api/http.js` — запросы, токен в `sessionStorage` (своя сессия на вкладку), ошибки `{error:{code,message,fields}}` → `ApiError`; при 401 — на `/login`.
-- `src/api/client.js` — все эндпоинты. Справочники запрашиваются один раз; если `GET /api/dictionaries` недоступен, берётся локальная копия `DICTIONARIES_FALLBACK`.
-- `src/api/useLoad.js` — загрузка с перезапросом после любых изменений и опросом (`pollMs`) на страницах статуса и очереди.
-- `src/config/statuses.js` — подписи статусов и шаги таймлайна.
+- `src/api/http.js` — запросы, токен в `sessionStorage` (своя сессия на вкладку), ошибки `{error:{code,message,fields}}` → `ApiError`; при 401 — на `/login`, при 409 — перечитывание данных, 5xx и обрыв сети — «Сервис временно недоступен».
+- `src/api/client.js` — все эндпоинты. Справочники запрашиваются один раз на вкладку.
+- `src/api/useLoad.js` — загрузка с перезапросом после любых изменений; `useApplication` опрашивает заявку с интервалом по статусу (`applicationPollMs` в `src/config/statuses.js`).
+- `src/components/ChecksList.jsx` — проверки банка; у аналитика — блок «Подробнее» с `details`.
+- `src/config/statuses.js` — подписи статусов, шаги таймлайна и интервалы опроса.
 - `src/styles/tokens.css` — дизайн-токены.
